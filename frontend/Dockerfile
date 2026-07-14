@@ -2,7 +2,7 @@
 # Vercel Commerce – multi-stage Docker build
 # ---------------------------------------------------------------
 FROM docker.io/library/node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # ---- Dependencies ----
 FROM base AS deps
