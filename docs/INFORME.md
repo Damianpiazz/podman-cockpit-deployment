@@ -73,6 +73,28 @@ az login
 
 **Qué hace:** Autentica al usuario con Azure CLI. Selecciona automáticamente la suscripción "Azure for Students" bajo el tenant de UTN FRLP. Abre el navegador para completar el flujo de autenticación.
 
+Salida real del terminal:
+
+```
+C:\Users\damian>az login
+Select the account you want to log in with. For more information on login with Azure CLI, see https://go.microsoft.com/fwlink/?linkid=2271136
+
+Retrieving tenants and subscriptions for the selection...
+
+[Tenant and subscription selection]
+
+No     Subscription name    Subscription ID                       Tenant
+-----  -------------------  ------------------------------------  --------
+[1] *  Azure for Students   8159fd40-ca9d-4561-a912-02a19fa7aae6  UTN FRLP
+
+The default is marked with an *; the default tenant is 'UTN FRLP' and subscription is 'Azure for Students' (8159fd40-ca9d-4561-a912-02a19fa7aae6).
+
+Select a subscription and tenant (Type a number or Enter for no changes):
+
+Tenant: UTN FRLP
+Subscription: Azure for Students (8159fd40-ca9d-4561-a912-02a19fa7aae6)
+```
+
 ### 4.2 Terraform Init
 
 ```bash
@@ -87,6 +109,29 @@ terraform init
 
 Crea el archivo `.terraform.lock.hcl` que bloquea las versiones de los providers para reproducibilidad.
 
+Salida real del terminal:
+
+```bash
+$ terraform init
+Initializing the backend...
+Initializing provider plugins...
+- Finding hashicorp/azurerm versions matching "~> 4.0"...
+- Finding hashicorp/random versions matching "~> 3.6"...
+- Finding latest version of hashicorp/tls...
+- Installing hashicorp/azurerm v4.81.0...
+- Installed hashicorp/azurerm v4.81.0 (signed by HashiCorp)
+- Installing hashicorp/random v3.9.0...
+- Installed hashicorp/random v3.9.0 (signed by HashiCorp)
+- Installing hashicorp/tls v4.3.0...
+- Installed hashicorp/tls v4.3.0 (signed by HashiCorp)
+Terraform has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.
+
+Terraform has been successfully initialized!
+```
+
 ### 4.3 Terraform Plan — Error de registro de providers
 
 ```bash
@@ -97,13 +142,77 @@ terraform plan
 
 > **PROBLEMA 1: Error de registro de Resource Providers**
 >
-> ```
-> Error: ConflictingConcurrentWriteNotAllowed
-> ```
->
-> **Causa:** La suscripción "Azure for Students" tiene permisos limitados que impiden el registro automático de resource providers. Terraform intenta registrar providers como `Microsoft.Network` y `Microsoft.Compute`, pero la suscripción lo bloquea.
+> La suscripción "Azure for Students" tiene permisos limitados que impiden el registro automático de resource providers. Terraform intenta registrar providers como `Microsoft.Network` y `Microsoft.Compute`, pero la suscripción lo bloquea.
 >
 > **Solución:** Se agregó `resource_provider_registrations = "none"` al bloque `provider "azurerm"` en `terraform/providers.tf`. Esto le indica a Terraform que no intente registrar providers, asumiendo que ya están registrados en la suscripción.
+
+Salida real del error:
+
+```bash
+$ terraform plan
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform planned the following actions, but then encountered a problem:
+
+  # tls_private_key.ssh will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                     = "RSA"
+      + rsa_bits                      = 4096
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + ssh_private_key = (sensitive value)
+╷
+│ Error: Encountered an error whilst ensuring Resource Providers are registered.
+│ ...
+│ Encountered the following errors:
+│
+│ registering resource provider "Microsoft.AVS": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.Sql": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed
+│ registering resource provider "Microsoft.ContainerInstance": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed
+│ registering resource provider "Microsoft.Cache": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed
+│ registering resource provider "Microsoft.Kusto": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed
+│ registering resource provider "Microsoft.Web": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed
+│
+│   with provider["registry.terraform.io/hashicorp/azurerm"],
+│   on providers.tf line 16, in provider "azurerm":
+│   16: provider "azurerm" {
+│
+╵
+```
+
+Tras agregar `resource_provider_registrations = "none"`, el plan funciona:
+
+```bash
+$ terraform plan
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username        = "azureuser"
+      + location              = "southafricanorth"
+      + name                  = "vm-podman-ecommerce"
+      + size                  = "Standard_B2s"
+      ...
+    }
+
+  # (plus 12 more resources: RG, VNet, Subnet, NSG, rules, NIC, PIP, TLS key)
+
+Plan: 13 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cockpit_url       = (known after apply)
+  + public_ip_address = (known after apply)
+  + site_url          = (known after apply)
+  + ssh_private_key   = (sensitive value)
+  + vm_id             = (known after apply)
+```
 
 ### 4.4 Terraform Apply — Error de tamaño de VM
 
@@ -117,13 +226,81 @@ Se crearon exitosamente: Resource Group, VNet, Subnet, NSG, reglas de seguridad,
 
 > **PROBLEMA 2: VM Standard_B2s no disponible**
 >
-> ```
-> Error: SkuNotAvailable: Standard_B2s is currently not available in location SouthAfricaNorth
-> ```
->
-> **Causa:** Las VMs de la serie B (con CPU bursting) no están disponibles para suscripciones de estudiantes en la región South Africa North por restricciones de capacidad.
+> Las VMs de la serie B (con CPU bursting) no están disponibles para suscripciones de estudiantes en la región South Africa North por restricciones de capacidad.
 >
 > **Solución:** Se cambió el valor de `vm_size` en `terraform.tfvars` de `Standard_B2s` a `Standard_D2s_v3`. Se ejecutó nuevamente `terraform apply` para completar la creación de la VM.
+
+Salida real — primer intento (fallo):
+
+```bash
+$ terraform apply
+
+Do you want to perform these actions?
+  Enter a value: yes
+
+tls_private_key.ssh: Creating...
+tls_private_key.ssh: Creation complete after 1s [id=cde4b29cd9aacf48eabef47a1e061bea0c5a984e]
+azurerm_resource_group.main: Creating...
+azurerm_resource_group.main: Creation complete after 33s
+azurerm_network_security_group.main: Creating...
+azurerm_virtual_network.main: Creating...
+azurerm_public_ip.main: Creating...
+azurerm_public_ip.main: Creation complete after 8s
+azurerm_network_security_group.main: Creation complete after 10s
+azurerm_virtual_network.main: Creation complete after 12s
+azurerm_subnet.main: Creating...
+azurerm_subnet.main: Creation complete after 12s
+azurerm_network_interface.main: Creating...
+azurerm_network_interface.main: Creation complete after 5s
+azurerm_network_interface_security_group_association.main: Creating...
+azurerm_network_interface_security_group_association.main: Creation complete after 7s
+azurerm_linux_virtual_machine.main: Creating...
+azurerm_linux_virtual_machine.main: Still creating... [00m50s elapsed]
+╷
+│ Error: creating Linux Virtual Machine (Subscription: "8159fd40-ca9d-4561-a912-02a19fa7aae6"
+│ Resource Group Name: "rg-podman-ecommerce"
+│ Virtual Machine Name: "vm-podman-ecommerce"): performing CreateOrUpdate: unexpected status 409 (409 Conflict) with error: SkuNotAvailable: The requested VM size for resource 'Following SKUs have failed for Capacity Restrictions: Standard_B2s' is currently not available in location 'SouthAfricaNorth'. Please try another size or deploy to a different location or different zone.
+│
+│   with azurerm_linux_virtual_machine.main,
+│   on main.tf line 140, in resource "azurerm_linux_virtual_machine" "main":
+│  140: resource "azurerm_linux_virtual_machine" "main" {
+│
+╵
+```
+
+Salida real — segundo intento (éxito con Standard_D2s_v3):
+
+```bash
+$ terraform apply
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + size = "Standard_D2s_v3"
+      ...
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+  Enter a value: yes
+
+azurerm_linux_virtual_machine.main: Creating...
+azurerm_linux_virtual_machine.main: Still creating... [00m10s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m20s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m30s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m40s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m50s elapsed]
+azurerm_linux_virtual_machine.main: Creation complete after 53s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cockpit_url = "https://20.164.202.187:9090"
+public_ip_address = "20.164.202.187"
+site_url = "https://20.164.202.187"
+ssh_private_key = <sensitive>
+vm_id = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce"
+```
 
 ### 4.5 Conexión SSH — Error de permisos
 
@@ -135,14 +312,43 @@ ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
 
 > **PROBLEMA 3: SSH Permission Denied**
 >
-> ```
-> Load key: error in libcrypto
-> Permission denied (publickey)
-> ```
->
-> **Causa:** Terraform en Windows creó el archivo `.pem` con permisos demasiado abiertos. Los clientes SSH rechazan claves cuyo archivo de permisos no es estrictamente `600` (solo lectura/escritura para el propietario).
+> Terraform en Windows creó el archivo `.pem` con permisos demasiado abiertos. Los clientes SSH rechazan claves cuyo archivo de permisos no es estrictamente `600` (solo lectura/escritura para el propietario).
 >
 > **Solución:** Se ejecutó `chmod 600 ~/.ssh/azure_vm.pem` para restringir los permisos. Luego la conexión SSH funcionó correctamente.
+
+Salida real — primer intento (fallo):
+
+```bash
+$ ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
+The authenticity of host '20.164.202.187 (20.164.202.187)' can't be established.
+ED25519 key fingerprint is: SHA256:XRohZx0lm/srTdP1m4FBQW3ddRpKxzHNsm4qRY9LzGs.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '20.164.202.187' (ED25519) to the list of known hosts.
+Load key "/c/Users/damian/.ssh/azure_vm.pem": error in libcrypto
+azureuser@20.164.202.187: Permission denied (publickey).
+```
+
+Salida real — después de `chmod 600` (éxito):
+
+```bash
+$ chmod 600 ~/.ssh/azure_vm.pem
+$ ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.17.0-1020-azure x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+System information as of Tue Jul 14 22:04:05 UTC 2026
+
+  System load:  0.0               Processes:             120
+  Usage of /:   7.2% of 28.02GB   Users logged in:       0
+  Memory usage: 4%                IPv4 address for eth0: 10.0.1.4
+  Swap usage:   0%
+
+azureuser@vm-podman-ecommerce:~$
+```
 
 ### 4.6 Script de configuración — Múltiples errores
 
@@ -152,27 +358,54 @@ El script `setup.sh` se ejecuta automáticamente vía cloud-init al crear la VM.
 tail -f /var/log/setup-vm.log
 ```
 
-**Qué hace:** Muestra en tiempo real las últimas líneas del log de configuración, permitiendo verificar si el script completó exitosamente o si hubo errores.
-
 Se encontraron varios problemas durante la ejecución del setup:
 
 > **PROBLEMA 4: podman-compose no encontrado**
 >
-> ```
-> podman-compose: command not found
-> ```
->
-> **Causa:** El script `setup.sh` no incluía la instalación de `podman-compose`, solo instalaba `podman`.
+> El script `setup.sh` no incluía la instalación de `podman-compose`, solo instalaba `podman`.
 >
 > **Solución:** Se instaló manualmente con `sudo apt-get install -y podman-compose` y se actualizó `setup.sh` para incluirlo en futuras ejecuciones.
 
+Salida real del error:
+
+```bash
+azureuser@vm-podman-ecommerce:~$ tail -f /var/log/setup-vm.log
+--- Levantando contenedores ---
+Error: looking up compose provider failed
+7 errors occurred:
+        * exec: "docker-compose": executable file not found in $PATH
+        * exec: "/.docker/cli-plugins/docker-compose": stat /.docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/local/lib/docker/cli-plugins/docker-compose": stat /usr/local/lib/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/local/libexec/docker/cli-plugins/docker-compose": stat /usr/local/libexec/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/lib/docker/cli-plugins/docker-compose": stat /usr/lib/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/libexec/docker/cli-plugins/docker-compose": stat /usr/libexec/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "podman-compose": executable file not found in $PATH
+^C
+```
+
+Instalación manual de podman-compose:
+
+```bash
+azureuser@vm-podman-ecommerce:~$ sudo apt-get install -y podman-compose
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  python3-dotenv
+The following NEW packages will be installed:
+  podman-compose python3-dotenv
+0 upgraded, 2 newly installed, 0 to remove.
+Need to get 60.9 kB of archives.
+After this operation, 305 kB of additional disk space will be used.
+Get:1 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 python3-dotenv all 1.0.1-1 [22.3 kB]
+Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 podman-compose all 1.0.6-1 [38.6 kB]
+Fetched 60.9 kB in 1s (74.7 kB/s)
+Setting up podman-compose (1.0.6-1) ...
+```
+
 > **PROBLEMA 5: Podman no resuelve nombres cortos de imágenes**
 >
-> ```
-> Error: short-name "nginx" did not resolve to an alias and no unqualified-search registries are defined
-> ```
->
-> **Causa:** Podman en Ubuntu 24.04 no viene configurado con registros de búsqueda implícitos. A diferencia de Docker, Podman requiere configuración explícita para resolver nombres cortos como `nginx` a `docker.io/library/nginx`.
+> Podman en Ubuntu 24.04 no viene configurado con registros de búsqueda implícitos. A diferencia de Docker, Podman requiere configuración explícita para resolver nombres cortos como `nginx` a `docker.io/library/nginx`.
 >
 > **Solución:** Se creó el archivo `/etc/containers/registries.conf.d/docker-io.conf` con el contenido:
 >
@@ -180,25 +413,46 @@ Se encontraron varios problemas durante la ejecución del setup:
 > unqualified-search-registries = ["docker.io"]
 > ```
 
+Salida real del error:
+
+```bash
+$ podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM nginx:1.27-alpine
+Error: creating build container: short-name "nginx:1.27-alpine" did not resolve to an alias and no unqualified-search registries are defined in "/etc/containers/registries.conf"
+exit code: 125
+```
+
 > **PROBLEMA 6: Error de propiedad de Git ("dubious ownership")**
 >
-> ```
-> fatal: detected dubious ownership in repository at '/opt/podman-cockpit-deployment'
-> ```
->
-> **Causa:** El repositorio fue clonado por el usuario `root` (durante cloud-init) pero se intenta acceder desde el usuario `azureuser`. Git verifica que el directorio del repositorio pertenezca al usuario actual.
+> El repositorio fue clonado por el usuario `root` (durante cloud-init) pero se intenta acceder desde el usuario `azureuser`. Git verifica que el directorio del repositorio pertenezca al usuario actual.
 >
 > **Solución:** Se ejecutó `sudo git config --global --add safe.directory /opt/podman-cockpit-deployment` para marcar el directorio como seguro.
 
+Salida real del error:
+
+```bash
+$ git pull
+fatal: detected dubious ownership in repository at '/opt/podman-cockpit-deployment'
+To add an exception for this directory, call:
+
+        git config --global --add safe.directory /opt/podman-cockpit-deployment
+```
+
 > **PROBLEMA 7: Imagen Docker de Medusa eliminada**
 >
-> ```
-> Error: reading manifest latest in docker.io/medusajs/medusa: requested access to the resource is denied
-> ```
->
-> **Causa:** La etiqueta `latest` de la imagen `medusajs/medusa` fue eliminada de Docker Hub como parte de la migración a Medusa v2. La imagen ya no está disponible públicamente.
+> La etiqueta `latest` de la imagen `medusajs/medusa` fue eliminada de Docker Hub como parte de la migración a Medusa v2. La imagen ya no está disponible públicamente.
 >
 > **Solución:** Se simplificó toda la arquitectura eliminando el backend Medusa, PostgreSQL y Redis. Se actualizó `compose.yml`, los Dockerfiles y la configuración de Nginx para soportar únicamente el frontend.
+
+Salida real del error:
+
+```bash
+podman run ... medusajs/medusa:latest
+Resolving "medusajs/medusa" using unqualified-search registries (/etc/containers/registries.conf.d/docker-io.conf)
+Trying to pull docker.io/medusajs/medusa:latest...
+Error: initializing source docker://medusajs/medusa:latest: reading manifest latest in docker.io/medusajs/medusa: requested access to the resource is denied
+exit code: 125
+```
 
 ### 4.7 Primer despliegue del frontend (Medusa Storefront)
 
@@ -250,23 +504,76 @@ Después de que ambos contenedores estuvieran ejecutándose, Nginx retornaba err
 
 > **PROBLEMA 12: Podman Aardvark-DNS no resuelve nombres de contenedores desde Alpine/musl**
 >
-> ```
-> curl: (6) Could not resolve host: nextjs
-> ```
->
-> **Causa:** El contenedor de Nginx (basado en Alpine, que usa la libc musl) no puede resolver el hostname `nextjs` a través del DNS interno de Podman (Aardvark-DNS). Se verificó que:
-> - `getent hosts nextjs` no retornaba nada
-> - `ping nextjs` fallaba
-> - `nslookup nextjs 10.89.0.1` excedía el tiempo de espera
-> - Pero la dirección IP funcionaba: `wget http://10.89.0.17:3000` retornaba HTML válido
->
-> Esta es una incompatibilidad conocida entre el resolver DNS de musl libc y Aardvark-DNS de Podman.
->
-> **Intentos fallidos:**
-> 1. Agregar `resolver 10.89.0.1` en la configuración de Nginx → sigue con 502, timeout de DNS
-> 2. Usar `set $nextjs_upstream http://nextjs:3000` con resolver → mismo problema
+> El contenedor de Nginx (basado en Alpine, que usa la libc musl) no puede resolver el hostname `nextjs` a través del DNS interno de Podman (Aardvark-DNS). Esta es una incompatibilidad conocida entre el resolver DNS de musl libc y Aardvark-DNS de Podman.
 >
 > **Solución definitiva:** Se cambió a `network_mode: host` para ambos contenedores. En este modo, los contenedores comparten el namespace de red de la VM. Nginx hace proxy a `127.0.0.1:3000` en lugar de `http://nextjs:3000`, eliminando completamente la necesidad de resolución DNS entre contenedores.
+
+Verificación del error 502:
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "curl -sk -o /dev/null -w '%{http_code}' https://localhost"
+502
+```
+
+Logs de Next.js (funcionando correctamente):
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman logs nextjs-ecommerce 2>&1 | tail -30"
+▲ Next.js 15.3.9
+   - Local:        http://fec851d52cdb:3000
+   - Network:      http://fec851d52cdb:3000
+
+ ✓ Starting...
+ ✓ Ready in 141ms
+```
+
+Pruebas de DNS fallidas:
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce ping -c1 nextjs 2>&1"
+ping: bad address 'nextjs'
+
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce cat /etc/resolv.conf"
+search dns.podman
+nameserver 10.89.0.1
+
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce nslookup nextjs 10.89.0.1 2>&1"
+;; connection timed out; no servers could be reached
+
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce getent hosts nextjs 2>&1"
+(no output)
+
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nextjs-ecommerce hostname -i"
+10.89.0.9
+```
+
+Inspección de la red Podman:
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman network inspect podman-cockpit-deployment_frontend 2>&1 | head -40"
+[
+     {
+          "name": "podman-cockpit-deployment_frontend",
+          "driver": "bridge",
+          "network_interface": "podman1",
+          "subnets": [
+               {
+                    "subnet": "10.89.0.0/24",
+                    "gateway": "10.89.0.1"
+               }
+          ],
+          "dns_enabled": true,
+          ...
+     }
+]
+```
+
+La IP directa funciona pero el DNS no:
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce wget -q -O - http://10.89.0.9:3000 2>&1 | head -5"
+<!DOCTYPE html><html><head>...
+```
 
 > **PROBLEMA 13: Next.js se vincula a una IP específica en lugar de todas las interfaces**
 >
@@ -296,9 +603,32 @@ No se configuró contraseña durante la creación de la VM (solo se usó clave S
 
 > **PROBLEMA 14: Login de Cockpit falla**
 >
-> **Causa:** La VM fue creada únicamente con clave SSH, sin contraseña de administrador. Cockpit requiere una contraseña para autenticar usuarios.
+> La VM fue creada únicamente con clave SSH, sin contraseña de administrador. Cockpit requiere una contraseña para autenticar usuarios.
 >
 > **Solución:** Se configuró una contraseña para el usuario `azureuser` con `sudo passwd azureuser`. Esta contraseña se utiliza para acceder a Cockpit.
+
+Salida real:
+
+```bash
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo passwd azureuser
+New password:
+Retype new password:
+passwd: password updated successfully
+```
+
+### 4.11 Verificación final
+
+```bash
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "sudo podman ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+NAMES             STATUS         PORTS
+nextjs-ecommerce  Up 25 seconds
+nginx-ecommerce   Up 23 seconds  0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+
+$ ssh -i ~/.ssh/azure_vm.pem azureuser@20.164.202.187 "curl -sk -o /dev/null -w '%{http_code}' https://localhost"
+200
+```
+
+Ambos contenedores activos, nginx expone puertos 80/443, y el sitio responde con HTTP 200.
 
 ---
 
