@@ -21,8 +21,9 @@ apt-get install -y curl git ufw
 # 2. Instalar Podman
 # -----------------------------------------------------------
 echo "--- Instalando Podman ---"
-apt-get install -y podman
+apt-get install -y podman podman-compose
 podman --version
+podman-compose --version
 
 # -----------------------------------------------------------
 # 3. Instalar Cockpit + complemento Podman
