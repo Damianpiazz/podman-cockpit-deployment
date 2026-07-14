@@ -50,7 +50,7 @@ services:
   # Medusa — Backend API
   # ----------------------------------------------------------
   medusa:
-    image: medusajs/medusa:latest
+    image: docker.io/medusajs/medusa:latest
     container_name: medusa-ecommerce
     environment:
       - NODE_ENV=production
@@ -72,7 +72,7 @@ services:
   # PostgreSQL 17 — Medusa database
   # ----------------------------------------------------------
   postgres:
-    image: postgres:17-alpine
+    image: docker.io/library/postgres:17-alpine
     container_name: postgres-ecommerce
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-medusa}

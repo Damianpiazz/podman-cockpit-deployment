@@ -1,5 +1,5 @@
 # Stage 1: Build Next.js standalone
-FROM node:20-alpine AS builder
+FROM docker.io/library/node:20-alpine AS builder
 RUN corepack enable && corepack prepare yarn@4.12.0 --activate
 WORKDIR /app
 COPY package.json yarn.lock .yarnrc.yml ./
@@ -21,7 +21,7 @@ ENV MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
 RUN yarn build
 
 # Stage 2: Run standalone server
-FROM node:20-alpine AS runner
+FROM docker.io/library/node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
