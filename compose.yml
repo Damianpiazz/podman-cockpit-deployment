@@ -35,7 +35,7 @@ services:
     container_name: nextjs-ecommerce
     environment:
       - NEXT_PUBLIC_BASE_URL=http://localhost
-      - SHOPIFY_STORE_DOMAIN=${SHOPIFY_STORE_DOMAIN:-placeholder.myshopify.com}
+      - SHOPIFY_STORE_DOMAIN=${SHOPIFY_STORE_DOMAIN:-}
       - SHOPIFY_STOREFRONT_ACCESS_TOKEN=${SHOPIFY_STOREFRONT_ACCESS_TOKEN:-}
       - SHOPIFY_REVALIDATION_SECRET=${SHOPIFY_REVALIDATION_SECRET:-}
       - COMPANY_NAME=${COMPANY_NAME:-Vercel Inc.}
