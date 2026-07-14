@@ -1,0 +1,105 @@
+# ============================================================
+# Podman/Docker Compose — Ecommerce Stack
+# Services: Nginx + Medusa Storefront + Medusa + PostgreSQL
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # Nginx — Reverse proxy SSL
+  # ----------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx-ecommerce
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - nextjs
+      - medusa
+    restart: unless-stopped
+    networks:
+      - frontend
+
+  # ----------------------------------------------------------
+  # Medusa Storefront — Next.js standalone
+  # ----------------------------------------------------------
+  nextjs:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextjs-ecommerce
+    environment:
+      - NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000
+      - NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-pk_test}
+      - NEXT_PUBLIC_BASE_URL=http://localhost
+      - NEXT_PUBLIC_DEFAULT_REGION=us
+      - MEDUSA_REVALIDATION_SECRET=${MEDUSA_REVALIDATION_SECRET:-supersecret123}
+      # Server-side env var for middleware.ts (reads MEDUSA_BACKEND_URL, not NEXT_PUBLIC_*)
+      - MEDUSA_BACKEND_URL=http://medusa:9000
+    restart: unless-stopped
+    networks:
+      - frontend
+
+  # ----------------------------------------------------------
+  # Medusa — Backend API
+  # ----------------------------------------------------------
+  medusa:
+    image: medusajs/medusa:latest
+    container_name: medusa-ecommerce
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-medusa}:${POSTGRES_PASSWORD:-medusa}@postgres:5432/${POSTGRES_DB:-medusa}
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwt}
+      - COOKIE_SECRET=${COOKIE_SECRET:-supersecretcookie}
+      - STORE_CORS=http://localhost,https://localhost
+      - ADMIN_CORS=http://localhost,https://localhost
+      - AUTH_CORS=http://localhost,https://localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+
+  # ----------------------------------------------------------
+  # PostgreSQL 17 — Medusa database
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres-ecommerce
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-medusa}
+      - POSTGRES_USER=${POSTGRES_USER:-medusa}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-medusa}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medusa} -d ${POSTGRES_DB:-medusa}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  pgdata:
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge

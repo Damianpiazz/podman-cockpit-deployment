@@ -1,340 +1,240 @@
-# Contenerización con Podman y Cockpit
+# Ecommerce — Podman + Cockpit en Azure
 
-Repositorio dedicado al despliegue y administración de aplicaciones web mediante contenedores **Podman**, gestionados a través de la interfaz web **Cockpit**.
+Despliegue de un e-commerce con **Next.js Commerce** (frontend), **Medusa** (backend API) y **PostgreSQL**, orquestados con **Podman Compose** y gestionados desde **Cockpit** en una VM de Azure provisionada con **Terraform**.
 
-> **Objetivo final:** levantar un servidor Nginx dentro de un contenedor Podman, administrado desde Cockpit, y verificar su funcionamiento modificando el contenido HTML.
-
----
-
-## Tabla de contenidos
-
-- [Escenario](#escenario)
-- [Tecnologías](#tecnologías)
-- [Prerrequisitos](#prerrequisitos)
-- [Actividades paso a paso](#actividades-paso-a-paso)
-  - [1. Crear la máquina virtual](#1-crear-la-máquina-virtual)
-  - [2. Instalar Podman](#2-instalar-podman)
-  - [3. Instalar Cockpit](#3-instalar-cockpit)
-  - [4. Instalar el complemento de Podman para Cockpit](#4-instalar-el-complemento-de-podman-para-cockpit)
-  - [5. Acceder a Cockpit](#5-acceder-a-cockpit)
-  - [6. Descargar la imagen de Nginx](#6-descargar-la-imagen-de-nginx)
-  - [7. Crear y ejecutar el contenedor](#7-crear-y-ejecutar-el-contenedor)
-  - [8. Personalizar la página web](#8-personalizar-la-página-web)
-  - [9. Documentar el proceso](#9-documentar-el-proceso)
-- [Resultado esperado](#resultado-esperado)
-- [Solución de problemas](#solución-de-problemas)
-- [Referencias](#referencias)
+> **Stack:** Next.js 13 + Medusa + PostgreSQL 17 + Nginx + Podman + Cockpit + Terraform + Azure VM
 
 ---
 
-## Escenario
-
-Se requiere preparar una infraestructura Linux para alojar servicios contenerizados. Para ello se utilizará una máquina virtual sobre la cual se instalará **Podman** como motor de contenedores y **Cockpit** como herramienta de administración web.
-
-Como demostración del funcionamiento del entorno, se desplegará un contenedor basado en la imagen oficial de **Nginx**, modificando posteriormente su contenido HTML.
+## Arquitectura
 
 ```mermaid
 graph TB
-    subgraph VM["Máquina Virtual Linux"]
-        Cockpit["Cockpit\nPuerto 9090"]
-        Podman["Podman\nMotor de contenedores"]
-        Nginx["Contenedor Nginx\nPuerto 80"]
+    subgraph Azure["VM Azure (Ubuntu 24.04)"]
+        Cockpit["Cockpit\n:9090"]
+        Nginx["Nginx\n:443"]
+        Nextjs["Next.js Commerce\n:3000"]
+        Medusa["Medusa API\n:9000"]
+        PG["PostgreSQL 17\n:5432"]
 
-        Cockpit <-->|Administra| Podman
-        Podman -->|Ejecuta| Nginx
+        Nginx -->|"Store /"| Nextjs
+        Nginx -->|"API /store/*"| Medusa
+        Nginx -->|"Admin /admin"| Medusa
+        Medusa --> PG
+        Cockpit -->|"Administra"| Nginx
     end
 
-    Browser["Navegador"] -->|https://:9090| Cockpit
-    Usuario["Usuario"] -->|http://:8080| Nginx
+    Browser["Navegador"] -->|"HTTPS :443"| Nginx
+    User["Admin"] -->|"https://:9090"| Cockpit
 
-    style VM fill:#f0f4ff,stroke:#333,stroke-width:2px
-    style Cockpit fill:#4a90d9,stroke:#2c5f8a,color:#fff
-    style Podman fill:#894fc6,stroke:#5b2d8e,color:#fff
+    style Azure fill:#f0f4ff,stroke:#333,stroke-width:2px
     style Nginx fill:#009639,stroke:#006b2b,color:#fff
+    style Nextjs fill:#000,stroke:#333,color:#fff
+    style Medusa fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style PG fill:#336791,stroke:#1a3d5c,color:#fff
+    style Cockpit fill:#894fc6,stroke:#5b2d8e,color:#fff
 ```
 
 ---
 
-## Tecnologías
+## Estructura del proyecto
 
-| Tecnología | Rol | Descripción |
-|:-----------|:----|:------------|
-| **Podman** | Motor de contenedores | Alternativa daemon-less a Docker, sin necesidad de permisos root |
-| **Cockpit** | Administración web | Interfaz gráfica para gestionar servidores Linux desde el navegador |
-| **Nginx** | Servidor web | Servidor de contenido de alta performance, usado como ejemplo de despliegue |
-| **Linux** | Sistema operativo | Distribución basada en Debian/Ubuntu para la máquina virtual |
+```
+podman-cockpit-deployment/
+├── terraform/                    # Provisionamiento Azure
+│   ├── main.tf                   # RG, VNet, NSG, VM
+│   ├── variables.tf              # Inputs configurables
+│   ├── outputs.tf                # IP publica, URLs
+│   ├── providers.tf              # azurerm ~> 4.0
+│   └── scripts/
+│       └── setup.sh              # Cloud-init: Podman, Cockpit, compose
+│
+├── frontend/                     # Next.js Commerce (Medusa)
+│   ├── app/                      # App Router
+│   ├── components/               # UI components
+│   ├── lib/                      # Medusa API client
+│   ├── next.config.js            # standalone output
+│   ├── package.json
+│   └── Dockerfile                # Multi-stage build
+│
+├── nginx/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── conf.d/
+│   │   └── default.conf          # HTTPS + proxy a Next.js + Medusa
+│   └── generate-certs.sh
+│
+├── compose.yml                   # Orquestacion Podman/Docker
+├── .env.example                  # Template de variables
+└── README.md
+```
+
+---
+
+## Tecnologias
+
+| Tecnologia | Rol | Version |
+|:-----------|:----|:--------|
+| **Next.js Commerce** | Frontend storefront | 13.x |
+| **Medusa** | Backend API / CMS | latest |
+| **PostgreSQL** | Base de datos | 17 |
+| **Nginx** | Reverse proxy SSL | 1.27 |
+| **Podman** | Motor de contenedores | latest |
+| **Cockpit** | Administracion web de la VM | latest |
+| **Terraform** | Infraestructura como codigo | >= 1.5 |
+| **Azure** | Cloud provider (VM Ubuntu 24.04) | - |
 
 ---
 
 ## Prerrequisitos
 
-- Conocimientos básicos de línea de comandos Linux
-- Un hipervisor de máquinas virtuales instalado (VirtualBox, VMware o similar)
-- Acceso a internet para descargar paquetes e imágenes
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) instalado y configurado (`az login`)
+- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.5 instalado
+- [Podman](https://podman.io/getting-started/installation) o Docker local (para build)
+- [Node.js](https://nodejs.org/) >= 18
+- Una clave SSH publica (`~/.ssh/id_rsa.pub` o similar)
+- Git
 
 ---
 
-## Actividades paso a paso
+## Despliegue rapido
 
-### 1. Crear la máquina virtual
+### 1. Provisionar la VM con Terraform
 
-Crear una máquina virtual con una distribución Linux (recomendada: **Ubuntu 22.04 LTS** o superior).
+```bash
+cd terraform
 
-**Especificaciones mínimas recomendadas:**
+cp terraform.tfvars.example terraform.tfvars
+# Editar: db_password, ssh_public_key_path, repo_url
 
-| Recurso   | Mínimo        | Recomendado   |
-|:----------|:--------------|:--------------|
-| CPU       | 1 núcleo      | 2 núcleos     |
-| RAM       | 1 GB          | 2 GB          |
-| Disco     | 10 GB         | 20 GB         |
-| Red       | NAT/Bridged   | Bridged       |
+terraform init
+terraform plan
+terraform apply
+```
 
-**Hipervisores compatibles:**
+### 2. Build del frontend (local)
 
-- **VirtualBox** — gratuito, multiplataforma
-- **VMware Workstation Player** — gratuito para uso personal
-- **Microsoft Azure** — VM en la nube (requiere cuenta de Azure)
-- **Proxmox** — para entornos de laboratorio con múltiples VMs
+```bash
+cd frontend
+
+# Instalar dependencias
+pnpm install
+
+# Configurar .env
+cp .env.example .env
+# Editar: NEXT_PUBLIC_MEDUSA_BACKEND_API=https://<IP_PUBLICA>
+
+# Build
+pnpm build
+```
+
+### 3. Levantar el stack en la VM
+
+```bash
+# SSH a la VM
+ssh -i terraform/output.tfstate azureuser@<IP_PUBLICA>
+
+cd /opt/podman-cockpit-deployment
+
+# Si no existe .env, crear desde el ejemplo
+cp .env.example .env
+# Editar con los valores reales
+
+# Generar certificados SSL
+bash nginx/generate-certs.sh <IP_PUBLICA>
+
+# Levantar contenedores
+podman compose up -d --build
+```
 
 ---
 
-### 2. Instalar Podman
+## URLs de acceso
 
-Acceder a la máquina virtual y ejecutar los siguientes comandos:
+| Servicio | URL |
+|:---------|:----|
+| **Tienda** | `https://<IP_PUBLICA>` |
+| **Medusa Admin** | `https://<IP_PUBLICA>/admin` |
+| **Medusa API** | `https://<IP_PUBLICA>/store/*` |
+| **Cockpit** | `https://<IP_PUBLICA>:9090` |
+
+---
+
+## Variables de entorno
+
+Copiar `.env.example` a `.env` y configurar:
+
+| Variable | Descripcion | Ejemplo |
+|:---------|:------------|:--------|
+| `POSTGRES_PASSWORD` | Password de PostgreSQL | `mypass123` |
+| `JWT_SECRET` | Secreto JWT de Medusa | `openssl rand -hex 32` |
+| `COOKIE_SECRET` | Secreto para cookies | `openssl rand -hex 32` |
+| `MEDUSA_REVALIDATION_SECRET` | Secret for revalidation | `openssl rand -hex 16` |
+| `SITE_NAME` | Nombre de la tienda | `Mi Tienda` |
+
+---
+
+## Desarrollo local
+
+### Medusa Backend
 
 ```bash
-# Actualizar repositorios
-sudo apt update
+# Levantar PostgreSQL
+podman run -d --name pg-dev \
+  -e POSTGRES_DB=medusa \
+  -e POSTGRES_USER=medusa \
+  -e POSTGRES_PASSWORD=medusa \
+  -p 5432:5432 \
+  postgres:17-alpine
 
-# Instalar Podman
-sudo apt install podman -y
+# Medusa (requiere install separado)
+# Ver: https://docs.medusajs.com/development/backend/install
 ```
 
-Verificar la instalación:
+### Next.js Commerce
 
 ```bash
-podman --version
-```
+cd frontend
 
-Ejemplo de salida esperada:
+cp .env.example .env
+# Editar: NEXT_PUBLIC_MEDUSA_BACKEND_API=http://localhost:9000
 
-```
-podman version 4.3.1
+pnpm install
+pnpm dev
+# Next.js: http://localhost:3000
 ```
 
 ---
 
-### 3. Instalar Cockpit
+## Solucion de problemas
+
+### Los contenedores no inician
 
 ```bash
-# Instalar Cockpit
-sudo apt install cockpit -y
-
-# Habilitar e iniciar el servicio
-sudo systemctl enable --now cockpit.socket
+podman compose logs nginx
+podman compose logs nextjs
+podman compose logs medusa
+podman compose logs postgres
 ```
 
-Verificar que el servicio esté activo:
+### Cockpit no carga
 
 ```bash
 sudo systemctl status cockpit.socket
-```
-
----
-
-### 4. Instalar el complemento de Podman para Cockpit
-
-Este complemento integra la gestión de contenedores Podman directamente en la interfaz de Cockpit.
-
-```bash
-sudo apt install cockpit-podman -y
-```
-
-> **Nota:** En distribuciones basadas en RHEL/Fedora, el paquete se llama `cockpit-podman` pero puede requerir repositorios adicionales.
-
----
-
-### 5. Acceder a Cockpit
-
-Abrir un navegador y acceder a la interfaz web de Cockpit:
-
-| Entorno          | URL de acceso                        |
-|:-----------------|:-------------------------------------|
-| Desde la VM      | `https://localhost:9090`             |
-| Desde otra máquina | `https://IP_DEL_SERVIDOR:9090`       |
-
-> **IMPORTANTE:** Cockpit usa HTTPS con certificado auto-firmado. El navegador mostrará una advertencia de seguridad. Aceptar el certificado para continuar.
-
-Iniciar sesión con las credenciales de un usuario del sistema:
-
-```bash
-# Si no recuerdas tu usuario, puedes usar:
-whoami
-```
-
----
-
-### 6. Descargar la imagen de Nginx
-
-Desde la interfaz de Cockpit:
-
-1. Navegar a la sección **Podman** (ícono de contenedores en el menú lateral)
-2. Ir a la pestaña **Images** (Imágenes)
-3. Hacer clic en **Download** (Descargar)
-4. Buscar `nginx` y seleccionar la imagen oficial (`docker.io/library/nginx`)
-5. Hacer clic en **Download** para iniciar la descarga
-
-También se puede hacer desde la línea de comandos:
-
-```bash
-podman pull docker.io/library/nginx:latest
-```
-
----
-
-### 7. Crear y ejecutar el contenedor
-
-**Desde Cockpit:**
-
-1. Ir a la pestaña **Containers** (Contenedores)
-2. Hacer clic en **Create container** (Crear contenedor)
-3. Seleccionar la imagen `nginx` descargada previamente
-4. Asignar un nombre al contenedor (ej: `mi-sitio-web`)
-5. Configurar el mapeo de puertos:
-   - Puerto del contenedor: `80`
-   - Puerto del host: `8080` (o el que prefieras)
-6. Hacer clic en **Create and run** (Crear y ejecutar)
-
-**Desde la línea de comandos:**
-
-```bash
-podman run -d \
-  --name mi-sitio-web \
-  -p 8080:80 \
-  docker.io/library/nginx:latest
-```
-
-Verificar que el contenedor esté en ejecución:
-
-```bash
-podman ps
-```
-
-Ejemplo de salida:
-
-```
-CONTAINER ID  IMAGE                           COMMAND               CREATED        STATUS        PORTS                 NAMES
-a1b2c3d4e5f6  docker.io/library/nginx:latest  /docker-entrypoint…  5 seconds ago  Up 5 seconds  0.0.0.0:8080->80/tcp  mi-sitio-web
-```
-
----
-
-### 8. Personalizar la página web
-
-Acceder al contenedor y modificar el archivo HTML de Nginx:
-
-**Desde la línea de comandos:**
-
-```bash
-# Acceder al contenedor
-podman exec -it mi-sitio-web bash
-
-# Dentro del contenedor, editar el archivo HTML
-echo '<!DOCTYPE html>
-<html>
-<head><title>Mi Sitio</title></head>
-<body>
-  <h1>Hola desde Podman + Cockpit</h1>
-  <p>Este sitio corre en un contenedor Nginx.</p>
-</body>
-</html>' > /usr/share/nginx/html/index.html
-
-# Salir del contenedor
-exit
-```
-
-Verificar accediendo desde el navegador:
-
-```
-http://localhost:8080
-```
-
-o desde otra máquina en la red:
-
-```
-http://IP_DEL_SERVIDOR:8080
-```
-
----
-
-### 9. Documentar el proceso
-
-Registrar los siguientes elementos como parte de la entrega:
-
-| Elemento              | Descripción                                      |
-|:----------------------|:-------------------------------------------------|
-| Procedimiento         | Pasos realizados con comandos exactos             |
-| Capturas de pantalla  | Interfaz de Cockpit, contenedor ejecutándose      |
-| Problemas encontrados | Errores, comportamientos inesperados              |
-| Soluciones implementadas | Cómo se resolvió cada problema                 |
-| Resultado final       | Evidencia del sitio web funcionando               |
-
----
-
-## Resultado esperado
-
-Al completar todas las actividades:
-
-- [x] Máquina virtual Linux funcionando
-- [x] Podman instalado y operativo
-- [x] Cockpit accesible desde el navegador
-- [x] Contenedor Nginx ejecutándose y sirviendo contenido personalizado
-- [x] Sitio web accesible desde el navegador
-
----
-
-## Solución de problemas
-
-### Cockpit no carga en el navegador
-
-```bash
-# Verificar que el servicio esté activo
-sudo systemctl status cockpit.socket
-
-# Si no está activo, iniciarlo
 sudo systemctl start cockpit.socket
 ```
 
-### El contenedor no inicia
+### Errores SSL en el navegador
 
-```bash
-# Verificar logs del contenedor
-podman logs mi-sitio-web
-
-# Verificar que el puerto no esté en uso
-sudo ss -tlnp | grep :8080
-```
-
-### No se puede acceder desde otra máquina
-
-- Verificar que el firewall permita el tráfico en el puerto 9090 (Cockpit) y 8080 (Nginx)
-- En Ubuntu: `sudo ufw allow 9090/tcp && sudo ufw allow 8080/tcp`
-- Si se usa una VM, verificar la configuración de red (Bridged o NAT con port forwarding)
-
-### Permiso denegado al ejecutar comandos Podman
-
-```bash
-# Podman rootless: asegurarse de que el usuario esté en el grupo
-sudo usermod -aG podman $USER
-
-# Cerrar sesión y volver a entrar para que el cambio surta efecto
-```
+El certificado es self-signed. Aceptar la excepcion de seguridad en el navegador.
 
 ---
 
 ## Referencias
 
-- [Documentación oficial de Podman](https://podman.io/getting-started/installation)
-- [Documentación oficial de Cockpit](https://cockpit-project.org/)
-- [Docker Hub — Nginx](https://hub.docker.com/_/nginx)
-- [Podman vs Docker](https://podman.io/blogs/2019/02/13/podman-vs-docker.html)
+- [Next.js Commerce](https://github.com/vercel/commerce)
+- [Medusa Commerce](https://github.com/medusajs/vercel-commerce)
+- [Medusa Documentation](https://docs.medusajs.com/)
+- [Podman Compose](https://github.com/containers/podman-compose)
+- [Cockpit Project](https://cockpit-project.org/)
+- [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)

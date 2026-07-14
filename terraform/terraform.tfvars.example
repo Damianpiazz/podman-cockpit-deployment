@@ -1,0 +1,16 @@
+# ============================================================
+# Terraform Variables — Copiar a terraform.tfvars y editar
+# ============================================================
+
+resource_group_name = "rg-podman-ecommerce"
+location            = "East US"
+vm_size             = "Standard_B2s"
+admin_username      = "azureuser"
+vm_name             = "vm-podman-ecommerce"
+environment         = "dev"
+
+# Password de PostgreSQL (generar uno seguro)
+db_password = "CHANGE_ME_SECURE_PASSWORD"
+
+# URL del repositorio Git (cambiar con tu usuario)
+repo_url = "https://github.com/TU_USUARIO/podman-cockpit-deployment.git"
