@@ -12,9 +12,7 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     container_name: nginx-ecommerce
-    ports:
-      - "80:80"
-      - "443:443"
+    network_mode: host
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
@@ -22,8 +20,6 @@ services:
     depends_on:
       - nextjs
     restart: unless-stopped
-    networks:
-      - frontend
 
   # ----------------------------------------------------------
   # Next.js Commerce — Storefront standalone
@@ -33,6 +29,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: nextjs-ecommerce
+    network_mode: host
     environment:
       - NEXT_PUBLIC_BASE_URL=http://localhost
       - SHOPIFY_STORE_DOMAIN=${SHOPIFY_STORE_DOMAIN:-}
@@ -41,12 +38,3 @@ services:
       - COMPANY_NAME=${COMPANY_NAME:-Vercel Inc.}
       - SITE_NAME=${SITE_NAME:-Next.js Commerce}
     restart: unless-stopped
-    networks:
-      - frontend
-
-# ============================================================
-# Networks
-# ============================================================
-networks:
-  frontend:
-    driver: bridge
