@@ -88,12 +88,35 @@ podman-cockpit-deployment/
 
 ## Prerrequisitos
 
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) instalado y configurado (`az login`)
-- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.5 instalado
-- [Podman](https://podman.io/getting-started/installation) o Docker local (para build)
-- [Node.js](https://nodejs.org/) >= 18
-- Una clave SSH publica (`~/.ssh/id_rsa.pub` o similar)
+### Instalar herramientas (Windows)
+
+```bash
+# Podman Desktop (incluye Podman +Compose)
+winget install RedHat.Podman-Desktop
+
+# Terraform
+winget install Hashicorp.Terraform
+
+# Azure CLI
+winget install Microsoft.AzureCLI
+```
+
+### Configurar entorno
+
+```bash
+# Login en Azure
+az login
+
+# Inicializar Terraform
+cd terraform
+terraform init
+```
+
+### Herramientas adicionales
+
+- [Node.js](https://nodejs.org/) >= 18 (para desarrollo local del frontend)
 - Git
+- Una clave SSH publica (`~/.ssh/id_rsa.pub` o similar)
 
 ---
 
@@ -105,7 +128,7 @@ podman-cockpit-deployment/
 cd terraform
 
 cp terraform.tfvars.example terraform.tfvars
-# Editar: db_password, ssh_public_key_path, repo_url
+# Editar: db_password, repo_url
 
 terraform init
 terraform plan
@@ -122,7 +145,7 @@ pnpm install
 
 # Configurar .env
 cp .env.example .env
-# Editar: NEXT_PUBLIC_MEDUSA_BACKEND_API=https://<IP_PUBLICA>
+# Editar: NEXT_PUBLIC_MEDUSA_BACKEND_URL=https://<IP_PUBLICA>
 
 # Build
 pnpm build
