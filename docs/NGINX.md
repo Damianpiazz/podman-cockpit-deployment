@@ -76,9 +76,19 @@ http {
 
 ### Estructura de virtual hosts
 
-```
-Puerto 80  → Redirect 301 a HTTPS
-Puerto 443 → Server principal con SSL
+```mermaid
+flowchart LR
+    Browser["Browser"] -->|"HTTP :80"| HTTP["Server :80"]
+    HTTP -->|"301 Redirect"| HTTPS["Server :443\nSSL"]
+    HTTPS -->|"/store/*"| Medusa["Medusa :9000\n/store/*"]
+    HTTPS -->|"/admin/*"| Admin["Medusa :9000\n/admin/*"]
+    HTTPS -->|"/*"| Nextjs["Next.js :3000"]
+
+    style HTTP fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    style HTTPS fill:#009639,stroke:#006b2b,color:#fff
+    style Medusa fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Admin fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Nextjs fill:#000,stroke:#333,color:#fff
 ```
 
 ### Rutas configuradas

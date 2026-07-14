@@ -16,17 +16,21 @@ En este proyecto, Medusa corre como contenedor Docker (`medusajs/medusa:latest`)
 
 ## Arquitectura en este repo
 
-```
-Browser ──HTTPS──> Nginx:443
-                    │
-                    ├── /store/* ──> Medusa:9000/store/*   (API publica)
-                    ├── /admin   ──> Medusa:9000/admin     (Dashboard)
-                    │                    │
-                    │                    └── PostgreSQL:5432
-                    │
-                    └── / ──> Next.js:3000 (Storefront)
-                                 │
-                                 └── Internamente llama a Medusa:9000
+```mermaid
+graph TB
+    Browser["Browser"] -->|"HTTPS :443"| Nginx["Nginx\n:443"]
+
+    Nginx -->|"/store/*"| Medusa["Medusa API\n:9000"]
+    Nginx -->|"/admin/*"| Medusa
+    Nginx -->|"/*"| Nextjs["Next.js\n:3000"]
+
+    Nextjs -->|"SSR fetch"| Medusa
+    Medusa --> Postgres["PostgreSQL\n:5432"]
+
+    style Nginx fill:#009639,stroke:#006b2b,color:#fff
+    style Medusa fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Nextjs fill:#000,stroke:#333,color:#fff
+    style Postgres fill:#336791,stroke:#1a3d5c,color:#fff
 ```
 
 ---
@@ -121,12 +125,21 @@ El frontend usa estas variables para conectarse al backend:
 
 ### Flujo de requests
 
-```
-Browser → Nginx → Next.js (SSR)
-                      │
-                      └── fetch("http://medusa:9000/store/products")
-                             │
-                             └── Medusa → PostgreSQL
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant N as Nginx
+    participant J as Next.js
+    participant M as Medusa
+    participant P as PostgreSQL
+
+    B->>N: GET /us/products
+    N->>J: proxy_pass :3000
+    J->>M: fetch /store/products (SSR)
+    M->>P: SELECT * FROM products
+    P-->>M: rows
+    M-->>J: JSON products
+    J-->>B: HTML rendered
 ```
 
 El Next.js server ejecuta los requests a Medusa internamente (server-side), no desde el browser.

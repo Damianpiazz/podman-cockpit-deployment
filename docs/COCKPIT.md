@@ -59,16 +59,31 @@ systemctl enable --now cockpit.socket
 
 ## Arquitectura en este repo
 
-```
-Browser ──HTTPS:9090──> Cockpit (en la VM)
-                           │
-                           ├── Administra Podman
-                           │      └── Contenedores: nginx, nextjs, medusa, postgres
-                           │
-                           └── Administra la VM
-                                  ├── Servicios systemd
-                                  ├── Logs
-                                  └── Metricas
+```mermaid
+graph TB
+    Browser["Navegador"] -->|"HTTPS :9090"| Cockpit
+
+    subgraph VM["VM Azure"]
+        Cockpit["Cockpit\n:9090"]
+        Cockpit -->|"Administra"| Podman["Podman"]
+        Cockpit -->|"Administra"| System["Sistema"]
+
+        Podman --> Nginx["nginx\n:443"]
+        Podman --> Nextjs["nextjs\n:3000"]
+        Podman --> Medusa["medusa\n:9000"]
+        Podman --> Postgres["postgres\n:5432"]
+
+        System --> Systemd["Servicios systemd"]
+        System --> Logs["Logs"]
+        System --> Metrics["Metricas"]
+    end
+
+    style Cockpit fill:#894fc6,stroke:#5b2d8e,color:#fff
+    style Podman fill:#894fc6,stroke:#5b2d8e,color:#fff
+    style Nginx fill:#009639,stroke:#006b2b,color:#fff
+    style Nextjs fill:#000,stroke:#333,color:#fff
+    style Medusa fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Postgres fill:#336791,stroke:#1a3d5c,color:#fff
 ```
 
 ---

@@ -61,31 +61,33 @@ Cuando Terraform crea la VM, ejecuta `terraform/scripts/setup.sh` como `custom_d
 
 ## Flujo de despliegue
 
-```
-Local                          Azure
-─────                          ─────
-az login ──────────────────> Autenticacion
-                               │
-terraform init ────────────> Descargar providers
-                               │
-terraform plan ────────────> Previsualizar recursos
-                               │
-terraform apply ───────────> Crear VM + recursos
-                               │
-                               ├── Resource Group
-                               ├── VNet + Subnet
-                               ├── NSG (firewall)
-                               ├── Public IP
-                               ├── NIC
-                               └── VM (Ubuntu 24.04)
-                                     │
-                                     └── setup.sh (cloud-init)
-                                           ├── Instalar Podman
-                                           ├── Instalar Cockpit
-                                           ├── Clonar repo
-                                           ├── Generar .env
-                                           ├── Generar certs SSL
-                                           └── podman compose up -d --build
+```mermaid
+sequenceDiagram
+    participant L as Local
+    participant T as Terraform
+    participant A as Azure
+    participant V as VM
+
+    L->>T: az login
+    T->>A: Autenticacion
+    L->>T: terraform init
+    T->>A: Descargar providers
+    L->>T: terraform plan
+    T->>A: Previsualizar recursos
+    L->>T: terraform apply
+    T->>A: Crear Resource Group
+    T->>A: Crear VNet + Subnet
+    T->>A: Crear NSG (firewall)
+    T->>A: Crear Public IP
+    T->>A: Crear NIC
+    T->>A: Crear VM (Ubuntu 24.04)
+    A->>V: Ejecutar setup.sh (cloud-init)
+    V->>V: Instalar Podman
+    V->>V: Instalar Cockpit
+    V->>V: Clonar repo
+    V->>V: Generar .env
+    V->>V: Generar certs SSL
+    V->>V: podman compose up -d --build
 ```
 
 ---

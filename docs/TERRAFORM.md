@@ -83,16 +83,24 @@ repo_url    = "https://github.com/TU_USUARIO/podman-cockpit-deployment.git"
 
 ### Cadena de dependencias
 
-```
-Resource Group
-    └── Virtual Network (10.0.0.0/16)
-            └── Subnet (10.0.1.0/24)
-                    ├── Public IP (estatica)
-                    ├── NSG (firewall rules)
-                    └── NIC
-                            └── VM (Ubuntu 24.04)
-                                    ├── SSH Key (RSA 4096)
-                                    └── custom_data → setup.sh
+```mermaid
+graph TB
+    RG["Resource Group\nrg-podman-ecommerce"]
+    RG --> VNet["Virtual Network\n10.0.0.0/16"]
+    VNet --> Subnet["Subnet\n10.0.1.0/24"]
+    Subnet --> PIP["Public IP\nEstatica"]
+    Subnet --> NSG["NSG\nFirewall"]
+    Subnet --> NIC["NIC"]
+    NIC --> VM["VM\nUbuntu 24.04"]
+    VM --> SSH["SSH Key\nRSA 4096"]
+    VM --> CD["custom_data\nsetup.sh"]
+
+    style RG fill:#0078d4,stroke:#005a9e,color:#fff
+    style VNet fill:#0078d4,stroke:#005a9e,color:#fff
+    style Subnet fill:#0078d4,stroke:#005a9e,color:#fff
+    style PIP fill:#0078d4,stroke:#005a9e,color:#fff
+    style NSG fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    style VM fill:#00a4ef,stroke:#0078d4,color:#fff
 ```
 
 ### Resource Group

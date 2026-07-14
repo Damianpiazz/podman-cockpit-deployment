@@ -71,20 +71,29 @@ sudo apt-get install -y podman podman-compose
 
 ### Redes
 
-```
-┌─────────────────────────────────────┐
-│           frontend                   │
-│                                      │
-│   nginx ──── nextjs ──── medusa      │
-│              │           │           │
-└──────────────┼───────────┼───────────┘
-               │           │
-┌──────────────┼───────────┼───────────┐
-│           backend          │         │
-│                            │         │
-│   medusa ──────────── postgres       │
-│                                      │
-└─────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph frontend["Red frontend"]
+        Nginx["nginx\n:443"]
+        Nextjs["nextjs\n:3000"]
+        Medusa["medusa\n:9000"]
+    end
+
+    subgraph backend["Red backend"]
+        Medusa2["medusa\n:9000"]
+        Postgres["postgres\n:5432"]
+    end
+
+    Nginx --> Nextjs
+    Nginx --> Medusa
+    Nextjs --> Medusa
+    Medusa --> Postgres
+
+    style Nginx fill:#009639,stroke:#006b2b,color:#fff
+    style Nextjs fill:#000,stroke:#333,color:#fff
+    style Medusa fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Medusa2 fill:#56b4d3,stroke:#2c7a9e,color:#fff
+    style Postgres fill:#336791,stroke:#1a3d5c,color:#fff
 ```
 
 - **frontend** — nginx, nextjs y medusa se comunican entre si
