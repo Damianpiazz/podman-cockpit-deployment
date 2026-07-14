@@ -167,7 +167,6 @@ resource "azurerm_linux_virtual_machine" "main" {
 
   custom_data = base64encode(templatefile("${path.module}/scripts/setup.sh", {
     repo_url       = var.repo_url
-    db_password    = var.db_password
     admin_username = var.admin_username
   }))
 
