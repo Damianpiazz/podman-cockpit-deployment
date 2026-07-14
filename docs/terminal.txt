@@ -1,0 +1,2887 @@
+Microsoft Windows [Versión 10.0.19045.6466]
+(c) Microsoft Corporation. Todos los derechos reservados.
+
+C:\Users\damian>az login
+Select the account you want to log in with. For more information on login with Azure CLI, see https://go.microsoft.com/fwlink/?linkid=2271136
+
+Retrieving tenants and subscriptions for the selection...
+
+[Tenant and subscription selection]
+
+No     Subscription name    Subscription ID                       Tenant
+-----  -------------------  ------------------------------------  --------
+[1] *  Azure for Students   8159fd40-ca9d-4561-a912-02a19fa7aae6  UTN FRLP
+
+The default is marked with an *; the default tenant is 'UTN FRLP' and subscription is 'Azure for Students' (8159fd40-ca9d-4561-a912-02a19fa7aae6).
+
+Select a subscription and tenant (Type a number or Enter for no changes):
+
+Tenant: UTN FRLP
+Subscription: Azure for Students (8159fd40-ca9d-4561-a912-02a19fa7aae6)
+
+[Announcements]
+With the new Azure CLI login experience, you can select the subscription you want to use more easily. Learn more about it and its configuration at https://go.microsoft.com/fwlink/?linkid=2271236
+
+If you encounter any problem, please open an issue at https://aka.ms/azclibug
+
+[Warning] The login output has been updated. Please be aware that it no longer displays the full list of available subscriptions by default.
+
+---
+
+damian@DESKTOP-FVI2382 MINGW64 /e/Repo/podman-cockpit-deployment/terraform (main)
+$ terraform init
+Initializing the backend...
+Initializing provider plugins...
+- Finding hashicorp/azurerm versions matching "~> 4.0"...
+- Finding hashicorp/random versions matching "~> 3.6"...
+- Finding latest version of hashicorp/tls...
+- Installing hashicorp/azurerm v4.81.0...
+- Installed hashicorp/azurerm v4.81.0 (signed by HashiCorp)
+- Installing hashicorp/random v3.9.0...
+- Installed hashicorp/random v3.9.0 (signed by HashiCorp)
+- Installing hashicorp/tls v4.3.0...
+- Installed hashicorp/tls v4.3.0 (signed by HashiCorp)
+Terraform has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+
+---
+
+damian@DESKTOP-FVI2382 MINGW64 /e/Repo/podman-cockpit-deployment/terraform (main)
+$ terraform plan
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform planned the following actions, but then encountered a problem:
+
+  # tls_private_key.ssh will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                     = "RSA"
+      + ecdsa_curve                   = "P224"
+      + id                            = (known after apply)
+      + private_key_openssh           = (sensitive value)
+      + private_key_pem               = (sensitive value)
+      + private_key_pem_pkcs8         = (sensitive value)
+      + public_key_fingerprint_md5    = (known after apply)
+      + public_key_fingerprint_sha256 = (known after apply)
+      + public_key_openssh            = (known after apply)
+      + public_key_pem                = (known after apply)
+      + rsa_bits                      = 4096
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + ssh_private_key = (sensitive value)
+╷
+│ Error: Encountered an error whilst ensuring Resource Providers are registered.
+│ Terraform automatically attempts to register the Azure Resource Providers it supports, to
+│ ensure it is able to provision resources.
+│ If you don't have permission to register Resource Providers you may wish to disable this
+│ functionality by adding the following to the Provider block:
+│ 
+│ provider "azurerm" {
+│   resource_provider_registrations = "none"
+│ }
+│ 
+│ Please note that if you opt out of Resource Provider Registration and Terraform tries
+│ to provision a resource from a Resource Provider which is unregistered, then the errors
+│ may appear misleading - for example:
+│ 
+│ > API version 2019-XX-XX was not found for Microsoft.Foo
+│ 
+│ Could suggest that the Resource Provider "Microsoft.Foo" requires registration, but
+│ this could also indicate that this Azure Region doesn't support this API version.
+│ 
+│ More information on the "resource_provider_registrations" property can be found here:
+│ https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs#resource-provider-registrations
+│ 
+│ Encountered the following errors:
+│ 
+│ registering resource provider "Microsoft.AVS": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.Sql": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.ContainerInstance": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.Cache": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.Kusto": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ registering resource provider "Microsoft.Web": unexpected status 409 (409 Conflict) with error: ConflictingConcurrentWriteNotAllowed: The operation was interrupted by a conflicting concurrent write on the same entity. Please retry later.
+│ 
+│   with provider["registry.terraform.io/hashicorp/azurerm"],
+│   on providers.tf line 16, in provider "azurerm":
+│   16: provider "azurerm" {
+│ 
+╵
+
+---
+
+Es un problema común con suscripciones student — Azure limita los permisos para registrar providers. La solución es desactivar el auto-registro en Terraform porque los providers que necesitás ya están registrados.
+←Edit terraform\providers.tf 
++ Thought: 229ms
+No puedo editar en este modo. Hacelo vos manualmente — abrí terraform/providers.tf y cambialo así:
+provider "azurerm" {
+  features {}
+  resource_provider_registrations = "none"
+}
+Después repetí:
+terraform plan
+El error va a desaparecer.
+▣  Plan · Big Pickle · 9.7s
+Hacelo
++ Thought: 399ms
+← Edit terraform\providers.tf
+}
+
+provider "azurerm" {
+  features {}
+  resource_provider_registrations = "none"
+}
+
+---
+
+damian@DESKTOP-FVI2382 MINGW64 /e/Repo/podman-cockpit-deployment/terraform (main)
+$ terraform plan
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username                                         = "azureuser"
+      + allow_extension_operations                             = (known after apply)
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + custom_data                                            = (sensitive value)
+      + disable_password_authentication                        = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + extensions_time_budget                                 = "PT1H30M"
+      + id                                                     = (known after apply)
+      + location                                               = "southafricanorth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-podman-ecommerce"
+      + network_interface_ids                                  = (known after apply)
+      + os_managed_disk_id                                     = (known after apply)
+      + patch_assessment_mode                                  = (known after apply)
+      + patch_mode                                             = (known after apply)
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = (known after apply)
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-podman-ecommerce"
+      + size                                                   = "Standard_B2s"
+      + tags                                                   = {
+          + "environment" = "dev"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = (known after apply)
+
+      + admin_ssh_key {
+          + public_key = (known after apply)
+          + username   = "azureuser"
+        }
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + id                        = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "ubuntu-24_04-lts"
+          + publisher = "Canonical"
+          + sku       = "server"
+          + version   = "latest"
+        }
+
+      + termination_notification (known after apply)
+    }
+
+  # azurerm_network_interface.main will be created
+  + resource "azurerm_network_interface" "main" {
+      + accelerated_networking_enabled = false
+      + applied_dns_servers            = (known after apply)
+      + id                             = (known after apply)
+      + internal_domain_name_suffix    = (known after apply)
+      + ip_forwarding_enabled          = false
+      + location                       = "southafricanorth"
+      + mac_address                    = (known after apply)
+      + name                           = "nic-vm-podman-ecommerce"
+      + private_ip_address             = (known after apply)
+      + private_ip_addresses           = (known after apply)
+      + resource_group_name            = "rg-podman-ecommerce"
+      + virtual_machine_id             = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "internal"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = (known after apply)
+          + subnet_id                                          = (known after apply)
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.main will be created
+  + resource "azurerm_network_interface_security_group_association" "main" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = (known after apply)
+    }
+
+  # azurerm_network_security_group.main will be created
+  + resource "azurerm_network_security_group" "main" {
+      + id                  = (known after apply)
+      + location            = "southafricanorth"
+      + name                = "nsg-vm-podman-ecommerce"
+      + resource_group_name = "rg-podman-ecommerce"
+      + security_rule       = (known after apply)
+    }
+
+  # azurerm_network_security_rule.cockpit will be created
+  + resource "azurerm_network_security_rule" "cockpit" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "9090"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-cockpit"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 400
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.http will be created
+  + resource "azurerm_network_security_rule" "http" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "80"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-http"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 200
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.https will be created
+  + resource "azurerm_network_security_rule" "https" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "443"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-https"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 300
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.ssh will be created
+  + resource "azurerm_network_security_rule" "ssh" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "22"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-ssh"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 100
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_public_ip.main will be created
+  + resource "azurerm_public_ip" "main" {
+      + allocation_method       = "Static"
+      + ddos_protection_mode    = "VirtualNetworkInherited"
+      + fqdn                    = (known after apply)
+      + id                      = (known after apply)
+      + idle_timeout_in_minutes = 4
+      + ip_address              = (known after apply)
+      + ip_version              = "IPv4"
+      + location                = "southafricanorth"
+      + name                    = "pip-vm-podman-ecommerce"
+      + resource_group_name     = "rg-podman-ecommerce"
+      + sku                     = "Standard"
+      + sku_tier                = "Regional"
+    }
+
+  # azurerm_resource_group.main will be created
+  + resource "azurerm_resource_group" "main" {
+      + id       = (known after apply)
+      + location = "southafricanorth"
+      + name     = "rg-podman-ecommerce"
+      + tags     = {
+          + "environment" = "dev"
+          + "managed-by"  = "terraform"
+          + "project"     = "podman-ecommerce"
+        }
+    }
+
+  # azurerm_subnet.main will be created
+  + resource "azurerm_subnet" "main" {
+      + address_prefixes                              = [
+          + "10.0.1.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "subnet-main"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-podman-ecommerce"
+      + virtual_network_name                          = "vnet-vm-podman-ecommerce"
+    }
+
+  # azurerm_virtual_network.main will be created
+  + resource "azurerm_virtual_network" "main" {
+      + address_space                  = [
+          + "10.0.0.0/16",
+        ]
+      + dns_servers                    = (known after apply)
+      + guid                           = (known after apply)
+      + id                             = (known after apply)
+      + location                       = "southafricanorth"
+      + name                           = "vnet-vm-podman-ecommerce"
+      + private_endpoint_vnet_policies = "Disabled"
+      + resource_group_name            = "rg-podman-ecommerce"
+      + subnet                         = (known after apply)
+    }
+
+  # tls_private_key.ssh will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                     = "RSA"
+      + ecdsa_curve                   = "P224"
+      + id                            = (known after apply)
+      + private_key_openssh           = (sensitive value)
+      + private_key_pem               = (sensitive value)
+      + private_key_pem_pkcs8         = (sensitive value)
+      + public_key_fingerprint_md5    = (known after apply)
+      + public_key_fingerprint_sha256 = (known after apply)
+      + public_key_openssh            = (known after apply)
+      + public_key_pem                = (known after apply)
+      + rsa_bits                      = 4096
+    }
+
+Plan: 13 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cockpit_url       = (known after apply)
+  + public_ip_address = (known after apply)
+  + site_url          = (known after apply)
+  + ssh_private_key   = (sensitive value)
+  + vm_id             = (known after apply)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
+
+
+---
+
+damian@DESKTOP-FVI2382 MINGW64 /e/Repo/podman-cockpit-deployment/terraform (main)
+$ terraform plan
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username                                         = "azureuser"
+      + allow_extension_operations                             = (known after apply)
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + custom_data                                            = (sensitive value)
+      + disable_password_authentication                        = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + extensions_time_budget                                 = "PT1H30M"
+      + id                                                     = (known after apply)
+      + location                                               = "southafricanorth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-podman-ecommerce"
+      + network_interface_ids                                  = (known after apply)
+      + os_managed_disk_id                                     = (known after apply)
+      + patch_assessment_mode                                  = (known after apply)
+      + patch_mode                                             = (known after apply)
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = (known after apply)
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-podman-ecommerce"
+      + size                                                   = "Standard_B2s"
+      + tags                                                   = {
+          + "environment" = "dev"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = (known after apply)
+
+      + admin_ssh_key {
+          + public_key = (known after apply)
+          + username   = "azureuser"
+        }
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + id                        = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "ubuntu-24_04-lts"
+          + publisher = "Canonical"
+          + sku       = "server"
+          + version   = "latest"
+        }
+
+      + termination_notification (known after apply)
+    }
+
+  # azurerm_network_interface.main will be created
+  + resource "azurerm_network_interface" "main" {
+      + accelerated_networking_enabled = false
+      + applied_dns_servers            = (known after apply)
+      + id                             = (known after apply)
+      + internal_domain_name_suffix    = (known after apply)
+      + ip_forwarding_enabled          = false
+      + location                       = "southafricanorth"
+      + mac_address                    = (known after apply)
+      + name                           = "nic-vm-podman-ecommerce"
+      + private_ip_address             = (known after apply)
+      + private_ip_addresses           = (known after apply)
+      + resource_group_name            = "rg-podman-ecommerce"
+      + virtual_machine_id             = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "internal"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = (known after apply)
+          + subnet_id                                          = (known after apply)
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.main will be created
+  + resource "azurerm_network_interface_security_group_association" "main" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = (known after apply)
+    }
+
+  # azurerm_network_security_group.main will be created
+  + resource "azurerm_network_security_group" "main" {
+      + id                  = (known after apply)
+      + location            = "southafricanorth"
+      + name                = "nsg-vm-podman-ecommerce"
+      + resource_group_name = "rg-podman-ecommerce"
+      + security_rule       = (known after apply)
+    }
+
+  # azurerm_network_security_rule.cockpit will be created
+  + resource "azurerm_network_security_rule" "cockpit" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "9090"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-cockpit"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 400
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.http will be created
+  + resource "azurerm_network_security_rule" "http" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "80"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-http"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 200
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.https will be created
+  + resource "azurerm_network_security_rule" "https" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "443"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-https"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 300
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.ssh will be created
+  + resource "azurerm_network_security_rule" "ssh" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "22"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-ssh"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 100
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_public_ip.main will be created
+  + resource "azurerm_public_ip" "main" {
+      + allocation_method       = "Static"
+      + ddos_protection_mode    = "VirtualNetworkInherited"
+      + fqdn                    = (known after apply)
+      + id                      = (known after apply)
+      + idle_timeout_in_minutes = 4
+      + ip_address              = (known after apply)
+      + ip_version              = "IPv4"
+      + location                = "southafricanorth"
+      + name                    = "pip-vm-podman-ecommerce"
+      + resource_group_name     = "rg-podman-ecommerce"
+      + sku                     = "Standard"
+      + sku_tier                = "Regional"
+    }
+
+  # azurerm_resource_group.main will be created
+  + resource "azurerm_resource_group" "main" {
+      + id       = (known after apply)
+      + location = "southafricanorth"
+      + name     = "rg-podman-ecommerce"
+      + tags     = {
+          + "environment" = "dev"
+          + "managed-by"  = "terraform"
+          + "project"     = "podman-ecommerce"
+        }
+    }
+
+  # azurerm_subnet.main will be created
+  + resource "azurerm_subnet" "main" {
+      + address_prefixes                              = [
+          + "10.0.1.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "subnet-main"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-podman-ecommerce"
+      + virtual_network_name                          = "vnet-vm-podman-ecommerce"
+    }
+
+  # azurerm_virtual_network.main will be created
+  + resource "azurerm_virtual_network" "main" {
+      + address_space                  = [
+          + "10.0.0.0/16",
+        ]
+      + dns_servers                    = (known after apply)
+      + guid                           = (known after apply)
+      + id                             = (known after apply)
+      + location                       = "southafricanorth"
+      + name                           = "vnet-vm-podman-ecommerce"
+      + private_endpoint_vnet_policies = "Disabled"
+      + resource_group_name            = "rg-podman-ecommerce"
+      + subnet                         = (known after apply)
+    }
+
+  # tls_private_key.ssh will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                     = "RSA"
+      + ecdsa_curve                   = "P224"
+      + id                            = (known after apply)
+      + private_key_openssh           = (sensitive value)
+      + private_key_pem               = (sensitive value)
+      + private_key_pem_pkcs8         = (sensitive value)
+      + public_key_fingerprint_md5    = (known after apply)
+      + public_key_fingerprint_sha256 = (known after apply)
+      + public_key_openssh            = (known after apply)
+      + public_key_pem                = (known after apply)
+      + rsa_bits                      = 4096
+    }
+
+Plan: 13 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cockpit_url       = (known after apply)
+  + public_ip_address = (known after apply)
+  + site_url          = (known after apply)
+  + ssh_private_key   = (sensitive value)
+  + vm_id             = (known after apply)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
+
+---
+
+$ terraform apply
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username                                         = "azureuser"
+      + allow_extension_operations                             = (known after apply)
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + custom_data                                            = (sensitive value)
+      + disable_password_authentication                        = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + extensions_time_budget                                 = "PT1H30M"
+      + id                                                     = (known after apply)
+      + location                                               = "southafricanorth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-podman-ecommerce"
+      + network_interface_ids                                  = (known after apply)
+      + os_managed_disk_id                                     = (known after apply)
+      + patch_assessment_mode                                  = (known after apply)
+      + patch_mode                                             = (known after apply)
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = (known after apply)
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-podman-ecommerce"
+      + size                                                   = "Standard_B2s"
+      + tags                                                   = {
+          + "environment" = "dev"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = (known after apply)
+
+      + admin_ssh_key {
+          + public_key = (known after apply)
+          + username   = "azureuser"
+        }
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + id                        = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "ubuntu-24_04-lts"
+          + publisher = "Canonical"
+          + sku       = "server"
+          + version   = "latest"
+        }
+
+      + termination_notification (known after apply)
+    }
+
+  # azurerm_network_interface.main will be created
+  + resource "azurerm_network_interface" "main" {
+      + accelerated_networking_enabled = false
+      + applied_dns_servers            = (known after apply)
+      + id                             = (known after apply)
+      + internal_domain_name_suffix    = (known after apply)
+      + ip_forwarding_enabled          = false
+      + location                       = "southafricanorth"
+      + mac_address                    = (known after apply)
+      + name                           = "nic-vm-podman-ecommerce"
+      + private_ip_address             = (known after apply)
+      + private_ip_addresses           = (known after apply)
+      + resource_group_name            = "rg-podman-ecommerce"
+      + virtual_machine_id             = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "internal"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = (known after apply)
+          + subnet_id                                          = (known after apply)
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.main will be created
+  + resource "azurerm_network_interface_security_group_association" "main" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = (known after apply)
+    }
+
+  # azurerm_network_security_group.main will be created
+  + resource "azurerm_network_security_group" "main" {
+      + id                  = (known after apply)
+      + location            = "southafricanorth"
+      + name                = "nsg-vm-podman-ecommerce"
+      + resource_group_name = "rg-podman-ecommerce"
+      + security_rule       = (known after apply)
+    }
+
+  # azurerm_network_security_rule.cockpit will be created
+  + resource "azurerm_network_security_rule" "cockpit" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "9090"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-cockpit"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 400
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.http will be created
+  + resource "azurerm_network_security_rule" "http" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "80"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-http"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 200
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.https will be created
+  + resource "azurerm_network_security_rule" "https" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "443"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-https"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 300
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_network_security_rule.ssh will be created
+  + resource "azurerm_network_security_rule" "ssh" {
+      + access                      = "Allow"
+      + destination_address_prefix  = "*"
+      + destination_port_range      = "22"
+      + direction                   = "Inbound"
+      + id                          = (known after apply)
+      + name                        = "allow-ssh"
+      + network_security_group_name = "nsg-vm-podman-ecommerce"
+      + priority                    = 100
+      + protocol                    = "Tcp"
+      + resource_group_name         = "rg-podman-ecommerce"
+      + source_address_prefix       = "*"
+      + source_port_range           = "*"
+    }
+
+  # azurerm_public_ip.main will be created
+  + resource "azurerm_public_ip" "main" {
+      + allocation_method       = "Static"
+      + ddos_protection_mode    = "VirtualNetworkInherited"
+      + fqdn                    = (known after apply)
+      + id                      = (known after apply)
+      + idle_timeout_in_minutes = 4
+      + ip_address              = (known after apply)
+      + ip_version              = "IPv4"
+      + location                = "southafricanorth"
+      + name                    = "pip-vm-podman-ecommerce"
+      + resource_group_name     = "rg-podman-ecommerce"
+      + sku                     = "Standard"
+      + sku_tier                = "Regional"
+    }
+
+  # azurerm_resource_group.main will be created
+  + resource "azurerm_resource_group" "main" {
+      + id       = (known after apply)
+      + location = "southafricanorth"
+      + name     = "rg-podman-ecommerce"
+      + tags     = {
+          + "environment" = "dev"
+          + "managed-by"  = "terraform"
+          + "project"     = "podman-ecommerce"
+        }
+    }
+
+  # azurerm_subnet.main will be created
+  + resource "azurerm_subnet" "main" {
+      + address_prefixes                              = [
+          + "10.0.1.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "subnet-main"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-podman-ecommerce"
+      + virtual_network_name                          = "vnet-vm-podman-ecommerce"
+    }
+
+  # azurerm_virtual_network.main will be created
+  + resource "azurerm_virtual_network" "main" {
+      + address_space                  = [
+          + "10.0.0.0/16",
+        ]
+      + dns_servers                    = (known after apply)
+      + guid                           = (known after apply)
+      + id                             = (known after apply)
+      + location                       = "southafricanorth"
+      + name                           = "vnet-vm-podman-ecommerce"
+      + private_endpoint_vnet_policies = "Disabled"
+      + resource_group_name            = "rg-podman-ecommerce"
+      + subnet                         = (known after apply)
+    }
+
+  # tls_private_key.ssh will be created
+  + resource "tls_private_key" "ssh" {
+      + algorithm                     = "RSA"
+      + ecdsa_curve                   = "P224"
+      + id                            = (known after apply)
+      + private_key_openssh           = (sensitive value)
+      + private_key_pem               = (sensitive value)
+      + private_key_pem_pkcs8         = (sensitive value)
+      + public_key_fingerprint_md5    = (known after apply)
+      + public_key_fingerprint_sha256 = (known after apply)
+      + public_key_openssh            = (known after apply)
+      + public_key_pem                = (known after apply)
+      + rsa_bits                      = 4096
+    }
+
+Plan: 13 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cockpit_url       = (known after apply)
+  + public_ip_address = (known after apply)
+  + site_url          = (known after apply)
+  + ssh_private_key   = (sensitive value)
+  + vm_id             = (known after apply)
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+tls_private_key.ssh: Creating...
+tls_private_key.ssh: Creation complete after 1s [id=cde4b29cd9aacf48eabef47a1e061bea0c5a984e]
+azurerm_resource_group.main: Creating...
+azurerm_resource_group.main: Still creating... [00m10s elapsed]
+azurerm_resource_group.main: Still creating... [00m20s elapsed]
+azurerm_resource_group.main: Still creating... [00m30s elapsed]
+azurerm_resource_group.main: Creation complete after 33s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce]
+azurerm_network_security_group.main: Creating...
+azurerm_virtual_network.main: Creating...
+azurerm_public_ip.main: Creating...
+azurerm_public_ip.main: Creation complete after 8s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/publicIPAddresses/pip-vm-podman-ecommerce]
+azurerm_network_security_group.main: Creation complete after 10s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+azurerm_network_security_rule.https: Creating...
+azurerm_network_security_rule.ssh: Creating...
+azurerm_network_security_rule.http: Creating...
+azurerm_network_security_rule.cockpit: Creating...
+azurerm_virtual_network.main: Still creating... [00m10s elapsed]
+azurerm_virtual_network.main: Creation complete after 12s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce]
+azurerm_subnet.main: Creating...
+azurerm_network_security_rule.ssh: Creation complete after 5s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-ssh]
+azurerm_network_security_rule.https: Creation complete after 7s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-https]
+azurerm_network_security_rule.cockpit: Creation complete after 9s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-cockpit]
+azurerm_network_security_rule.http: Still creating... [00m10s elapsed]
+azurerm_subnet.main: Still creating... [00m10s elapsed]
+azurerm_subnet.main: Creation complete after 12s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce/subnets/subnet-main]
+azurerm_network_interface.main: Creating...
+azurerm_network_security_rule.http: Creation complete after 19s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-http]
+azurerm_network_interface.main: Creation complete after 5s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce]
+azurerm_network_interface_security_group_association.main: Creating...
+azurerm_linux_virtual_machine.main: Creating...
+azurerm_network_interface_security_group_association.main: Creation complete after 7s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce|/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+╷
+│ Error: creating Linux Virtual Machine (Subscription: "8159fd40-ca9d-4561-a912-02a19fa7aae6"
+│ Resource Group Name: "rg-podman-ecommerce"
+│ Virtual Machine Name: "vm-podman-ecommerce"): performing CreateOrUpdate: unexpected status 409 (409 Conflict) with error: SkuNotAvailable: The requested VM size for resource 'Following SKUs have failed for Capacity Restrictions: Standard_B2s' is currently not available in location 'SouthAfricaNorth'. Please try another size or deploy to a different location or different zone. See https://aka.ms/azureskunotavailable for details.
+│ 
+│   with azurerm_linux_virtual_machine.main,
+│   on main.tf line 140, in resource "azurerm_linux_virtual_machine" "main":
+│  140: resource "azurerm_linux_virtual_machine" "main" {
+│ 
+╵
+
+---
+
+La VM Standard_B2s no está disponible en South Africa North para tu suscripción student. Es común — las regiones más chicas tienen menos capacidad.
+Cambiá a Standard_B1s (más barata, 1 vCPU, 1GB RAM) o a Standard_D2s_v3 (2 vCPU, 8GB RAM, más cara pero siempre disponible).
+# Questions
+Standard_B2s no está disponible en South Africa North. ¿Cuál preferís?
+Standard_B1s (Recommended)
++ Thought: 264ms
+← Edit terraform\terraform.tfvars
+# ============================================================
+
+resource_group_name = "rg-podman-ecommerce"
+location            = "South Africa North"
+vm_size             = "Standard_B2s"
+vm_size             = "Standard_B1s"
+admin_username      = "azureuser"
+vm_name             = "vm-podman-ecommerce"
+environment         = "dev"
+
+---
+
+
+damian@DESKTOP-FVI2382 MINGW64 /e/Repo/podman-cockpit-deployment/terraform (main)
+$ terraform apply
+tls_private_key.ssh: Refreshing state... [id=cde4b29cd9aacf48eabef47a1e061bea0c5a984e]
+azurerm_resource_group.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce]
+azurerm_public_ip.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/publicIPAddresses/pip-vm-podman-ecommerce]
+azurerm_virtual_network.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce]
+azurerm_network_security_group.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+azurerm_subnet.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce/subnets/subnet-main]
+azurerm_network_security_rule.https: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-https]
+azurerm_network_security_rule.http: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-http]
+azurerm_network_security_rule.ssh: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-ssh]
+azurerm_network_security_rule.cockpit: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-cockpit]
+azurerm_network_interface.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce]
+azurerm_network_interface_security_group_association.main: Refreshing state... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce|/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username                                         = "azureuser"
+      + allow_extension_operations                             = (known after apply)
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + custom_data                                            = (sensitive value)
+      + disable_password_authentication                        = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + extensions_time_budget                                 = "PT1H30M"
+      + id                                                     = (known after apply)
+      + location                                               = "southafricanorth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-podman-ecommerce"
+      + network_interface_ids                                  = [
+          + "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce",
+        ]
+      + os_managed_disk_id                                     = (known after apply)
+      + patch_assessment_mode                                  = (known after apply)
+      + patch_mode                                             = (known after apply)
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = (known after apply)
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-podman-ecommerce"
+      + size                                                   = "Standard_D2s_v3"
+      + tags                                                   = {
+          + "environment" = "dev"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = (known after apply)
+
+      + admin_ssh_key {
+          + public_key = <<-EOT
+                ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqXY0pcNQfWfyQ+dvftfZIP2Y63X516PF4fpJaTQxXpjVa2hz+MrkYRHX14wKbOx9c6CFI4852CSUfueL7q9dyj2957JbbElZ7b0Nj3B7o9lCcuASahfMCVzrcIfjw++vWW3cDxcl4sHpq/SiJi5dz/JmP18hJlAsXnXz/SbbJQMla341eZQM7vYz9g+hRu5umzlQXb9sQKM/UHVeZo2s3ZOGErKwm7fFRGvoN3NzE9F/IeNr8V1AwAYyvScY/VJNURzQL9k0fuM6vpbpdHANpXM0zxehQCeLCPDMtS4/j2afgmnY5M80xwBZsMbSL6Fb4vM+jw5r1ZMeB7o7o8BE8P0/YxYbezrMTxBw6iFcOd/lQg2cCASP6neV8Wm5AQ50b1Ltks6/bGm8PKFWaKkavLphgG/+sUgR5alk4ztIn93yWck/EkBWcJO5xW1FvX3asGD5d4Pgtr4kRj/qw0ZkpD1wdgz1eudg2wwZnVL2jWkF/xlvg72eX0rG1vnkmC5kiGJUBt9whmGozY9IUNyDgc6CVGjMquS0HyTxjaR+E9Mz909BKqNjBWvFz+h4E11a1cXxUDXHEn060KjQO2ScmO+h359TiVCaOMX9HRUQzPA0b6mUMKklFlJPe/I1Qaqw5BqC2cjzuzLnJ8P/c4zlbJqP25ILbpiFOgUZYIsulVQ==
+            EOT
+          + username   = "azureuser"
+        }
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + id                        = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "ubuntu-24_04-lts"
+          + publisher = "Canonical"
+          + sku       = "server"
+          + version   = "latest"
+        }
+
+      + termination_notification (known after apply)
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + vm_id             = (known after apply)
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+azurerm_linux_virtual_machine.main: Creating...
+azurerm_linux_virtual_machine.main: Still creating... [00m10s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m20s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m30s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m40s elapsed]
+azurerm_linux_virtual_machine.main: Still creating... [00m50s elapsed]
+azurerm_linux_virtual_machine.main: Creation complete after 53s [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cockpit_url = "https://20.164.202.187:9090"
+public_ip_address = "20.164.202.187"
+site_url = "https://20.164.202.187"
+ssh_private_key = <sensitive>
+vm_id = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce"
+
+---
+
+$ Get-Content "$env:USERPROFILE\.ssh\azure_vm.pem"
+-----BEGIN RSA PRIVATE KEY-----
+clave ...
+-----END RSA PRIVATE KEY-----
+
+---
+
+$ ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
+The authenticity of host '20.164.202.187 (20.164.202.187)' can't be established.
+ED25519 key fingerprint is: SHA256:XRohZx0lm/srTdP1m4FBQW3ddRpKxzHNsm4qRY9LzGs
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '20.164.202.187' (ED25519) to the list of known hosts.
+Load key "/c/Users/damian/.ssh/azure_vm.pem": error in libcrypto
+azureuser@20.164.202.187: Permission denied (publickey).  
+
+---
+
+El problema es que el archivo .pem tiene permisos abiertos. SSH en Git Bash no lo acepta así. Arreglalo con:
+chmod 600 ~/.ssh/azure_vm.pem
+Después volvé a intentar:
+ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
+
+---
+
+$ chmod 600 ~/.ssh/azure_vm.pem
+ssh azureuser@20.164.202.187 -i ~/.ssh/azure_vm.pem
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.17.0-1020-azure x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Tue Jul 14 22:04:05 UTC 2026
+
+  System load:  0.0               Processes:             120
+  Usage of /:   7.2% of 28.02GB   Users logged in:       0
+  Memory usage: 4%                IPv4 address for eth0: 10.0.1.4
+  Swap usage:   0%
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+2 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+Web console: https://vm-podman-ecommerce.qt2rncyhnk3uxlg05rxm5bz3nd.jnbx.internal.cloudapp.net:9090/ or https://10.0.1.4:9090/
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+---
+
+azureuser@vm-podman-ecommerce:~$ tail -f /var/log/setup-vm.log
+--- Levantando contenedores ---
+Error: looking up compose provider failed
+7 errors occurred:
+        * exec: "docker-compose": executable file not found in $PATH
+        * exec: "/.docker/cli-plugins/docker-compose": stat /.docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/local/lib/docker/cli-plugins/docker-compose": stat /usr/local/lib/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/local/libexec/docker/cli-plugins/docker-compose": stat /usr/local/libexec/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/lib/docker/cli-plugins/docker-compose": stat /usr/lib/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "/usr/libexec/docker/cli-plugins/docker-compose": stat /usr/libexec/docker/cli-plugins/docker-compose: no such file or directory
+        * exec: "podman-compose": executable file not found in $PATH
+^C
+
+---
+
+El setup.sh instaló Podman pero no instaló podman-compose. Hay que arreglarlo.
+→Read terraform\scripts\setup.sh 
++ Thought: 2.3s
+Falta instalar podman-compose en el script. Lo agrego:
+← Edit terraform\scripts\setup.sh
+# -----------------------------------------------------------
+# 2. Instalar Podman
+# -----------------------------------------------------------
+echo "--- Instalando Podman ---"
+apt-get install -y podman
+apt-get install -y podman podman-compose
+podman --version
+podman-compose --version
+
+# -----------------------------------------------------------
+# 3. Instalar Cockpit + complemento Podman
+# -----------------------------------------------------------
+
+---
+
+azureuser@vm-podman-ecommerce:~$ sudo apt-get install -y podman-compose
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  python3-dotenv
+The following NEW packages will be installed:
+  podman-compose python3-dotenv
+0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Need to get 60.9 kB of archives.
+After this operation, 305 kB of additional disk space will be used.
+Get:1 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 python3-dotenv all 1.0.1-1 [22.3 kB]
+Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 podman-compose all 1.0.6-1 [38.6 kB]
+Fetched 60.9 kB in 1s (74.7 kB/s)         
+Selecting previously unselected package python3-dotenv.
+(Reading database ... 71142 files and directories currently installed.)
+Preparing to unpack .../python3-dotenv_1.0.1-1_all.deb ...
+Unpacking python3-dotenv (1.0.1-1) ...
+Selecting previously unselected package podman-compose.
+Preparing to unpack .../podman-compose_1.0.6-1_all.deb ...
+Unpacking podman-compose (1.0.6-1) ...
+Setting up python3-dotenv (1.0.1-1) ...
+Setting up podman-compose (1.0.6-1) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Scanning processes...                                                                                                                                   
+Scanning linux images...                                                                                                                                
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+azureuser@vm-podman-ecommerce:~$ cd /opt/podman-cockpit-deployment
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ podman compose up -d --build
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/2] STEP 1/19: FROM node:20-alpine AS builder
+Resolved "node" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
+Trying to pull docker.io/library/node:20-alpine...
+Getting image source signatures
+Copying blob fff4e2c1b189 done   | 
+Copying blob 4feea04c1543 done   | 
+Copying blob 6a0ac1617861 done   | 
+Copying blob b2cbbfe903b0 done   | 
+Copying config 11cedc39e6 done   | 
+Writing manifest to image destination
+[1/2] STEP 2/19: RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+Preparing yarn@4.12.0 for immediate activation...
+--> 0dab276af32d
+[1/2] STEP 3/19: WORKDIR /app
+--> e9ac23323a56
+[1/2] STEP 4/19: COPY package.json yarn.lock .yarnrc.yml ./
+--> 8128242c4981
+[1/2] STEP 5/19: COPY .yarn .yarn
+--> 4b16f78a22e7
+[1/2] STEP 6/19: RUN yarn install --immutable
+➤ YN0000: · Yarn 4.12.0
+➤ YN0000: ┌ Resolution step
+➤ YN0000: └ Completed in 0s 841ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0060: │ eslint is listed by your project with version 8.10.0 (pd73733), which doesn't satisfy what @typescript-eslint/eslint-plugin (via eslint-config-next) and other dependencies request (^8.57.0 || ^9.7.0).
+➤ YN0060: │ react is listed by your project with version 19.0.5 (pbc1b08), which doesn't satisfy what @medusajs/icons and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ react-dom is listed by your project with version 19.0.5 (p269cf1), which doesn't satisfy what @medusajs/ui and other dependencies request (^18.3.1).
+➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 786 packages were added to the project (+ 140.86 MiB).
+➤ YN0000: └ Completed in 44s 573ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ sharp@npm:0.34.5 must be built because it never has been before or the last one failed
+➤ YN0007: │ unrs-resolver@npm:1.11.1 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 17s 454ms
+➤ YN0000: · Done with warnings in 1m 4s
+--> 1b0e5fe8de65
+[1/2] STEP 7/19: COPY . .
+--> 2912c1f29c61
+[1/2] STEP 8/19: ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000
+--> cec577ea4dc4
+[1/2] STEP 9/19: ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test
+--> 7ed4a389ff7a
+[1/2] STEP 10/19: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> 39cb15797a96
+[1/2] STEP 11/19: ARG NEXT_PUBLIC_DEFAULT_REGION=us
+--> 446131b7ecc0
+[1/2] STEP 12/19: ARG REVALIDATION_SECRET=supersecret
+--> 78f0fa9d0c66
+[1/2] STEP 13/19: ENV NEXT_PUBLIC_MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> 20c76518fce5
+[1/2] STEP 14/19: ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+--> 2a719735c7cf
+[1/2] STEP 15/19: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> b78c6ac9498e
+[1/2] STEP 16/19: ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+--> 11dcc8d09213
+[1/2] STEP 17/19: ENV REVALIDATION_SECRET=$REVALIDATION_SECRET
+--> ee9558637251
+[1/2] STEP 18/19: ENV MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> 46b47593328d
+[1/2] STEP 19/19: RUN yarn build
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.3.9
+
+   Creating an optimized production build ...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled successfully in 68s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+Failed to generate static paths for product pages: Error setting up the request: fetch failed.
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                Size  First Load JS
+┌ ○ /_not-found                                           152 B         102 kB
+├ ƒ /[countryCode]                                        629 B         338 kB
+├ ƒ /[countryCode]/account                               3.7 kB         118 kB
+├ ƒ /[countryCode]/account/addresses                    6.99 kB         137 kB
+├ ƒ /[countryCode]/account/orders                       3.89 kB         342 kB
+├ ƒ /[countryCode]/account/orders/details/[id]          5.61 kB         125 kB
+├ ƒ /[countryCode]/account/profile                      8.95 kB         130 kB
+├ ƒ /[countryCode]/cart                                  2.6 kB         345 kB
+├ ● /[countryCode]/categories/[...category]             1.75 kB         339 kB
+├ ƒ /[countryCode]/checkout                             23.3 kB         402 kB
+├ ● /[countryCode]/collections/[handle]                 1.77 kB         339 kB
+├ ƒ /[countryCode]/order/[id]/confirmed                 1.96 kB         340 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]          1.22 kB         330 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/accept     434 B         329 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/decline    434 B         329 kB
+├ ● /[countryCode]/products/[handle]                    11.1 kB         373 kB
+├ ƒ /[countryCode]/store                                1.77 kB         339 kB
+├ ○ /opengraph-image.jpg                                    0 B            0 B
+└ ○ /twitter-image.jpg                                      0 B            0 B
++ First Load JS shared by all                            102 kB
+  ├ chunks/1684-07504df4c719039c.js                     46.6 kB
+  ├ chunks/4bd1b696-1415c063f493bcc3.js                 53.2 kB
+  └ other shared chunks (total)                         2.01 kB
+
+
+ƒ Middleware                                              34 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+--> 7cae840c1a5f
+[2/2] STEP 1/11: FROM node:20-alpine AS runner
+[2/2] STEP 2/11: WORKDIR /app
+--> fa1f1ae45ee2
+[2/2] STEP 3/11: ENV NODE_ENV=production
+--> 56bb9688ed51
+[2/2] STEP 4/11: RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+--> 4f1d6f0fcfab
+[2/2] STEP 5/11: COPY --from=builder /app/.next/standalone ./
+--> e29f89d144b0
+[2/2] STEP 6/11: COPY --from=builder /app/.next/static ./.next/static
+--> 30511e74e975
+[2/2] STEP 7/11: COPY --from=builder /app/public ./public
+--> 70f1390878c9
+[2/2] STEP 8/11: USER nextjs
+--> 66a84d025a09
+[2/2] STEP 9/11: EXPOSE 3000
+--> 9acd251831cd
+[2/2] STEP 10/11: ENV PORT=3000
+--> bae50988205c
+[2/2] STEP 11/11: CMD ["node", "server.js"]
+[2/2] COMMIT podman-cockpit-deployment_nextjs
+--> 9286d05a97e0
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+9286d05a97e0fff6f317f52fc22ec269d566c8a8518d1d4dbbd769cfe7967543
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM nginx:1.27-alpine
+Error: creating build container: short-name "nginx:1.27-alpine" did not resolve to an alias and no unqualified-search registries are defined in "/etc/containers/registries.conf"
+exit code: 125
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', '--driver', 'bridge', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000 -e NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test -e NEXT_PUBLIC_BASE_URL=http://localhost -e NEXT_PUBLIC_DEFAULT_REGION=us -e MEDUSA_REVALIDATION_SECRET=198c1670728e1f9c7630761e2c1340fa -e MEDUSA_BACKEND_URL=http://medusa:9000 --net podman-cockpit-deployment_frontend --network-alias nextjs --restart unless-stopped podman-cockpit-deployment_nextjs
+f8f3b9eb275eed61523317f1cbccc2ce48c5dc67b6c39073ed2d426ec7d118ae
+exit code: 0
+podman volume inspect podman-cockpit-deployment_pgdata || podman volume create podman-cockpit-deployment_pgdata
+['podman', 'volume', 'inspect', 'podman-cockpit-deployment_pgdata']
+Error: no such volume podman-cockpit-deployment_pgdata
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', 'podman-cockpit-deployment_pgdata']
+['podman', 'volume', 'inspect', 'podman-cockpit-deployment_pgdata']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+['podman', 'network', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', '--driver', 'bridge', 'podman-cockpit-deployment_backend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=postgres-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=postgres -e POSTGRES_DB=medusa -e POSTGRES_USER=medusa -e POSTGRES_PASSWORD=MiTienda2026!segura -v podman-cockpit-deployment_pgdata:/var/lib/postgresql/data --net podman-cockpit-deployment_backend --network-alias postgres --restart unless-stopped --healthcheck-command /bin/sh -c 'pg_isready -U medusa -d medusa' --healthcheck-interval 5s --healthcheck-timeout 5s --healthcheck-retries 5 postgres:17-alpine
+Error: short-name "postgres:17-alpine" did not resolve to an alias and no unqualified-search registries are defined in "/etc/containers/registries.conf"exit code: 125
+podman start postgres-ecommerce
+Error: no container with name or ID "postgres-ecommerce" found: no such container
+exit code: 125
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=medusa-ecommerce -d --requires=postgres-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=medusa -e NODE_ENV=production -e DATABASE_URL=postgresql://medusa:MiTienda2026!segura@postgres:5432/medusa -e JWT_SECRET=61d64b3b6660b627160a1e4d744d405631fac62833d0442e7cd67a6a37903b9e -e COOKIE_SECRET=bc1f6af975d368836475c192d9b0b68879fe10c6bf186a6bdb15e4dce1559658 -e STORE_CORS=http://localhost,https://localhost -e ADMIN_CORS=http://localhost,https://localhost -e AUTH_CORS=http://localhost,https://localhost --net podman-cockpit-deployment_frontend,podman-cockpit-deployment_backend --network-alias medusa --restart unless-stopped medusajs/medusa:latest
+Error: short-name "medusajs/medusa:latest" did not resolve to an alias and no unqualified-search registries are defined in "/etc/containers/registries.conf"
+exit code: 125
+podman start medusa-ecommerce
+Error: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nginx-ecommerce -d --requires=nextjs-ecommerce,medusa-ecommerce,postgres-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --net podman-cockpit-deployment_frontend --network-alias nginx -p 80:80 -p 443:443 --restart unless-stopped podman-cockpit-deployment_nginx
+Error: short-name "podman-cockpit-deployment_nginx" did not resolve to an alias and no unqualified-search registries are defined in "/etc/containers/registries.conf"
+exit code: 125
+podman start nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+
+---
+
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ echo 'unqualified-search-registries = ["docker.io"]' | sudo tee /etc/containers/registries.conf.d/docker-io.conf
+cd /opt/podman-cockpit-deployment
+git pull
+sudo podman compose down
+sudo podman compose up -d --build
+unqualified-search-registries = ["docker.io"]
+fatal: detected dubious ownership in repository at '/opt/podman-cockpit-deployment'
+To add an exception for this directory, call:
+
+        git config --global --add safe.directory /opt/podman-cockpit-deployment
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman stop -t 10 nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 medusa-ecommerce
+Error: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 postgres-ecommerce
+Error: no container with name or ID "postgres-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 nextjs-ecommerce
+Error: no container with name or ID "nextjs-ecommerce" found: no such container
+exit code: 125
+podman rm nginx-ecommerce
+Error: no container with ID or name "nginx-ecommerce" found: no such container
+exit code: 1
+podman rm medusa-ecommerce
+Error: no container with ID or name "medusa-ecommerce" found: no such container
+exit code: 1
+podman rm postgres-ecommerce
+Error: no container with ID or name "postgres-ecommerce" found: no such container
+exit code: 1
+podman rm nextjs-ecommerce
+Error: no container with ID or name "nextjs-ecommerce" found: no such container
+exit code: 1
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/2] STEP 1/19: FROM node:20-alpine AS builder
+Resolved "node" as an alias (/etc/containers/registries.conf.d/shortnames.conf)
+Trying to pull docker.io/library/node:20-alpine...
+Getting image source signatures
+Copying blob fff4e2c1b189 done   | 
+Copying blob 4feea04c1543 done   | 
+Copying blob 6a0ac1617861 done   | 
+Copying blob b2cbbfe903b0 done   | 
+Copying config 11cedc39e6 done   | 
+Writing manifest to image destination
+[1/2] STEP 2/19: RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+Preparing yarn@4.12.0 for immediate activation...
+--> 34e95a509f37
+[1/2] STEP 3/19: WORKDIR /app
+--> b1950e09ccf3
+[1/2] STEP 4/19: COPY package.json yarn.lock .yarnrc.yml ./
+--> 704fd44165dc
+[1/2] STEP 5/19: COPY .yarn .yarn
+--> 8844cf4f7207
+[1/2] STEP 6/19: RUN yarn install --immutable
+➤ YN0000: · Yarn 4.12.0
+➤ YN0000: ┌ Resolution step
+➤ YN0000: └ Completed in 0s 835ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0060: │ eslint is listed by your project with version 8.10.0 (pd73733), which doesn't satisfy what @typescript-eslint/eslint-plugin (via eslint-config-next) and other dependencies request (^8.57.0 || ^9.7.0).
+➤ YN0060: │ react is listed by your project with version 19.0.5 (pbc1b08), which doesn't satisfy what @medusajs/icons and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ react-dom is listed by your project with version 19.0.5 (p269cf1), which doesn't satisfy what @medusajs/ui and other dependencies request (^18.3.1).
+➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 786 packages were added to the project (+ 140.86 MiB).
+➤ YN0000: └ Completed in 44s 127ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ sharp@npm:0.34.5 must be built because it never has been before or the last one failed
+➤ YN0007: │ unrs-resolver@npm:1.11.1 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 18s 461ms
+➤ YN0000: · Done with warnings in 1m 4s
+--> d38e7b31540e
+[1/2] STEP 7/19: COPY . .
+--> 542b1211f36a
+[1/2] STEP 8/19: ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000
+--> 2f51d52aada5
+[1/2] STEP 9/19: ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test
+--> c77f7be5a99e
+[1/2] STEP 10/19: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> de206134c2a8
+[1/2] STEP 11/19: ARG NEXT_PUBLIC_DEFAULT_REGION=us
+--> 4bc3cd86ff6e
+[1/2] STEP 12/19: ARG REVALIDATION_SECRET=supersecret
+--> 73582f203b1d
+[1/2] STEP 13/19: ENV NEXT_PUBLIC_MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> f0e7288830fc
+[1/2] STEP 14/19: ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+--> c7174b2553c2
+[1/2] STEP 15/19: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> 04e16a1f8c45
+[1/2] STEP 16/19: ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+--> 14783821f020
+[1/2] STEP 17/19: ENV REVALIDATION_SECRET=$REVALIDATION_SECRET
+--> f429cb98382b
+[1/2] STEP 18/19: ENV MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> 2654f8e8308e
+[1/2] STEP 19/19: RUN yarn build
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.3.9
+
+   Creating an optimized production build ...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled successfully in 68s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+Failed to generate static paths for product pages: Error setting up the request: fetch failed.
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                Size  First Load JS
+┌ ○ /_not-found                                           152 B         102 kB
+├ ƒ /[countryCode]                                        629 B         338 kB
+├ ƒ /[countryCode]/account                              3.71 kB         118 kB
+├ ƒ /[countryCode]/account/addresses                       7 kB         137 kB
+├ ƒ /[countryCode]/account/orders                       3.89 kB         342 kB
+├ ƒ /[countryCode]/account/orders/details/[id]          5.61 kB         125 kB
+├ ƒ /[countryCode]/account/profile                      8.95 kB         130 kB
+├ ƒ /[countryCode]/cart                                  2.6 kB         345 kB
+├ ● /[countryCode]/categories/[...category]             1.75 kB         339 kB
+├ ƒ /[countryCode]/checkout                             23.3 kB         402 kB
+├ ● /[countryCode]/collections/[handle]                 1.77 kB         339 kB
+├ ƒ /[countryCode]/order/[id]/confirmed                 1.95 kB         340 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]          1.22 kB         330 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/accept     434 B         329 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/decline    434 B         329 kB
+├ ● /[countryCode]/products/[handle]                    11.1 kB         373 kB
+├ ƒ /[countryCode]/store                                1.77 kB         339 kB
+├ ○ /opengraph-image.jpg                                    0 B            0 B
+└ ○ /twitter-image.jpg                                      0 B            0 B
++ First Load JS shared by all                            102 kB
+  ├ chunks/1684-07504df4c719039c.js                     46.6 kB
+  ├ chunks/4bd1b696-1415c063f493bcc3.js                 53.2 kB
+  └ other shared chunks (total)                         2.01 kB
+
+
+ƒ Middleware                                              34 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+--> f254bf3fea64
+[2/2] STEP 1/11: FROM node:20-alpine AS runner
+[2/2] STEP 2/11: WORKDIR /app
+--> e1a8efeb910e
+[2/2] STEP 3/11: ENV NODE_ENV=production
+--> 8b5b2840dfd6
+[2/2] STEP 4/11: RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+--> 0fc9106021eb
+[2/2] STEP 5/11: COPY --from=builder /app/.next/standalone ./
+--> 8a12e089791b
+[2/2] STEP 6/11: COPY --from=builder /app/.next/static ./.next/static
+--> 2cbf229a0b22
+[2/2] STEP 7/11: COPY --from=builder /app/public ./public
+--> 84a9a9b86ada
+[2/2] STEP 8/11: USER nextjs
+--> 1113913e91bb
+[2/2] STEP 9/11: EXPOSE 3000
+--> d8fe9b7065b8
+[2/2] STEP 10/11: ENV PORT=3000
+--> e1ffb9397452
+[2/2] STEP 11/11: CMD ["node", "server.js"]
+[2/2] COMMIT podman-cockpit-deployment_nextjs
+--> a32a3b4babe8
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+a32a3b4babe8a83e46f312bfd16407d66d6d00785e33219d9301964a805f9179
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM nginx:1.27-alpine
+Resolving "nginx" using unqualified-search registries (/etc/containers/registries.conf.d/docker-io.conf)
+Trying to pull docker.io/library/nginx:1.27-alpine...
+Getting image source signatures
+Copying blob 197eb75867ef done   | 
+Copying blob b464cfdf2a63 done   | 
+Copying blob f18232174bc9 done   | 
+Copying blob 61ca4f733c80 done   | 
+Copying blob d7e507024086 done   | 
+Copying blob 81bd8ed7ec67 done   | 
+Copying blob 34a64644b756 done   | 
+Copying blob 39c2ddfd6010 done   | 
+Copying config 6769dc3a70 done   | 
+Writing manifest to image destination
+STEP 2/7: RUN rm /etc/nginx/conf.d/default.conf
+--> d15050d15285
+STEP 3/7: COPY nginx.conf /etc/nginx/nginx.conf
+--> 4800991876b4
+STEP 4/7: COPY conf.d/ /etc/nginx/conf.d/
+--> deaf5a3af839
+STEP 5/7: RUN mkdir -p /etc/nginx/ssl
+--> 985768dfd127
+STEP 6/7: EXPOSE 80 443
+--> f71a38a031c5
+STEP 7/7: CMD ["nginx", "-g", "daemon off;"]
+COMMIT podman-cockpit-deployment_nginx
+--> da7849d4850c
+Successfully tagged localhost/podman-cockpit-deployment_nginx:latest
+da7849d4850c0a325e7029f15bc1ff2b893eb57051249dc28808922370bd1559
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', '--driver', 'bridge', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000 -e NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test -e NEXT_PUBLIC_BASE_URL=http://localhost -e NEXT_PUBLIC_DEFAULT_REGION=us -e MEDUSA_REVALIDATION_SECRET=198c1670728e1f9c7630761e2c1340fa -e MEDUSA_BACKEND_URL=http://medusa:9000 --net podman-cockpit-deployment_frontend --network-alias nextjs --restart unless-stopped podman-cockpit-deployment_nextjs
+168c50931add1cd09db1c37c7dc42b6c8abc6682abb995b2e9a7b5ed2af88809
+exit code: 0
+podman volume inspect podman-cockpit-deployment_pgdata || podman volume create podman-cockpit-deployment_pgdata
+['podman', 'volume', 'inspect', 'podman-cockpit-deployment_pgdata']
+Error: no such volume podman-cockpit-deployment_pgdata
+['podman', 'volume', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', 'podman-cockpit-deployment_pgdata']
+['podman', 'volume', 'inspect', 'podman-cockpit-deployment_pgdata']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+['podman', 'network', 'create', '--label', 'io.podman.compose.project=podman-cockpit-deployment', '--label', 'com.docker.compose.project=podman-cockpit-deployment', '--driver', 'bridge', 'podman-cockpit-deployment_backend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=postgres-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=postgres -e POSTGRES_DB=medusa -e POSTGRES_USER=medusa -e POSTGRES_PASSWORD=MiTienda2026!segura -v podman-cockpit-deployment_pgdata:/var/lib/postgresql/data --net podman-cockpit-deployment_backend --network-alias postgres --restart unless-stopped --healthcheck-command /bin/sh -c 'pg_isready -U medusa -d medusa' --healthcheck-interval 5s --healthcheck-timeout 5s --healthcheck-retries 5 postgres:17-alpine
+Resolving "postgres" using unqualified-search registries (/etc/containers/registries.conf.d/docker-io.conf)
+Trying to pull docker.io/library/postgres:17-alpine...
+Getting image source signatures
+Copying blob b1aad2d5f399 done   | 
+Copying blob 55afa1ecc21d done   | 
+Copying blob 34a3e2652f22 done   | 
+Copying blob ae8ed6ddf5d2 done   | 
+Copying blob 9cf33c25d575 done   | 
+Copying blob 603858638485 done   | 
+Copying blob 5635b2c7f90f done   | 
+Copying blob 4635b503f9b2 done   | 
+Copying blob e5d94dfa43d9 done   | 
+Copying blob 7bd7d677a4b5 done   | 
+Copying config 93aa428db0 done   | 
+Writing manifest to image destination
+43f5b4699dad0a6b9884534b53d07e66877d03c0fab201aaae4e8bc1417f805f
+exit code: 0
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=medusa-ecommerce -d --requires=postgres-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=medusa -e NODE_ENV=production -e DATABASE_URL=postgresql://medusa:MiTienda2026!segura@postgres:5432/medusa -e JWT_SECRET=61d64b3b6660b627160a1e4d744d405631fac62833d0442e7cd67a6a37903b9e -e COOKIE_SECRET=bc1f6af975d368836475c192d9b0b68879fe10c6bf186a6bdb15e4dce1559658 -e STORE_CORS=http://localhost,https://localhost -e ADMIN_CORS=http://localhost,https://localhost -e AUTH_CORS=http://localhost,https://localhost --net podman-cockpit-deployment_frontend,podman-cockpit-deployment_backend --network-alias medusa --restart unless-stopped medusajs/medusa:latest
+Resolving "medusajs/medusa" using unqualified-search registries (/etc/containers/registries.conf.d/docker-io.conf)
+Trying to pull docker.io/medusajs/medusa:latest...
+Error: initializing source docker://medusajs/medusa:latest: reading manifest latest in docker.io/medusajs/medusa: requested access to the resource is denied
+exit code: 125
+podman start medusa-ecommerce
+Error: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nginx-ecommerce -d --requires=medusa-ecommerce,postgres-ecommerce,nextjs-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --net podman-cockpit-deployment_frontend --network-alias nginx -p 80:80 -p 443:443 --restart unless-stopped podman-cockpit-deployment_nginx
+Error: "medusa-ecommerce" is not a valid container, cannot be used as a dependency: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+podman start nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+
+---
+
+Aca me di cuenta que no existia mas la imagen de medusa en la regestry de docker 
+
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ cd /opt/podman-cockpit-deployment
+sudo podman compose down
+git pull
+sudo podman compose up -d --build
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman stop -t 10 nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 medusa-ecommerce
+Error: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 postgres-ecommerce
+postgres-ecommerce
+exit code: 0
+podman stop -t 10 nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+podman rm nginx-ecommerce
+Error: no container with ID or name "nginx-ecommerce" found: no such container
+exit code: 1
+podman rm medusa-ecommerce
+Error: no container with ID or name "medusa-ecommerce" found: no such container
+exit code: 1
+podman rm postgres-ecommerce
+postgres-ecommerce
+exit code: 0
+podman rm nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+fatal: detected dubious ownership in repository at '/opt/podman-cockpit-deployment'
+To add an exception for this directory, call:
+
+        git config --global --add safe.directory /opt/podman-cockpit-deployment
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/2] STEP 1/19: FROM node:20-alpine AS builder
+[1/2] STEP 2/19: RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+--> Using cache 34e95a509f374ae49e33a5fa6cb33b33c043670b2ea5bf55eb824106935373cb
+--> 34e95a509f37
+[1/2] STEP 3/19: WORKDIR /app
+--> Using cache b1950e09ccf3d3118e77040abb9e15642fd2cc50e91da6a7d843e332658be3ca
+--> b1950e09ccf3
+[1/2] STEP 4/19: COPY package.json yarn.lock .yarnrc.yml ./
+--> Using cache 704fd44165dc96cb1845884b3bc102d95597cfd4e7830bed916453b223fad0af
+--> 704fd44165dc
+[1/2] STEP 5/19: COPY .yarn .yarn
+--> Using cache 8844cf4f7207cbe39e3a3c930c86dc3e0be90908a8b83bdb1943ce5eda96e737
+--> 8844cf4f7207
+[1/2] STEP 6/19: RUN yarn install --immutable
+--> Using cache d38e7b31540eea933cc4bd7d8d6fb147642abfd14aa2cbf5ebcfc4ee2536e1bb
+--> d38e7b31540e
+[1/2] STEP 7/19: COPY . .
+--> Using cache 542b1211f36ab58173ae70c640620db02fe39fff11bae2796af407acbddd51f2
+--> 542b1211f36a
+[1/2] STEP 8/19: ARG NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000
+--> Using cache 2f51d52aada5960b0fe3e8169571ffefe829e8e20ef47842147ba2af08677fdf
+--> 2f51d52aada5
+[1/2] STEP 9/19: ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test
+--> Using cache c77f7be5a99e6ae3821310aef3a47f90562eceafada0427d45b09f41c2f41cb7
+--> c77f7be5a99e
+[1/2] STEP 10/19: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> Using cache de206134c2a88920e983a2da96aafa1de67433253429b85ee7382d8a62096803
+--> de206134c2a8
+[1/2] STEP 11/19: ARG NEXT_PUBLIC_DEFAULT_REGION=us
+--> Using cache 4bc3cd86ff6ec838e1afe7e6dbcf9638c6cdae157a8d02f2e501f03a6c640e54
+--> 4bc3cd86ff6e
+[1/2] STEP 12/19: ARG REVALIDATION_SECRET=supersecret
+--> Using cache 73582f203b1d1ed2ca283cf8ae93307bb0a89c9a1f993437563385e1e408a3f1
+--> 73582f203b1d
+[1/2] STEP 13/19: ENV NEXT_PUBLIC_MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> Using cache f0e7288830fc02f35d1db791943f3a70307b5008fdee9bc54c3693774bf89ce9
+--> f0e7288830fc
+[1/2] STEP 14/19: ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+--> Using cache c7174b2553c2ccb1bd55eca1b41b9b9d867794aee9a4e4d14860eb75439e4cf5
+--> c7174b2553c2
+[1/2] STEP 15/19: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> Using cache 04e16a1f8c45ea5d8ebf00e26a7868507422a11829f8793959a56c8827d11bf4
+--> 04e16a1f8c45
+[1/2] STEP 16/19: ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+--> Using cache 14783821f020f9f5418ddad2b6c55bec4eaa7825e7a1666864c2db8501bfd3a7
+--> 14783821f020
+[1/2] STEP 17/19: ENV REVALIDATION_SECRET=$REVALIDATION_SECRET
+--> Using cache f429cb98382bd2e83f3f910fa6ae6ae03ae817018d7dfff99ad3111de7fc4421
+--> f429cb98382b
+[1/2] STEP 18/19: ENV MEDUSA_BACKEND_URL=$NEXT_PUBLIC_MEDUSA_BACKEND_URL
+--> Using cache 2654f8e8308e46926e5c3ac9778905d9792bbcdf65b46a3000c181e23c05db44
+--> 2654f8e8308e
+[1/2] STEP 19/19: RUN yarn build
+--> Using cache f254bf3fea6420fd45842b807159618e3e17c8464b481efe2cc60041c05a2359
+--> f254bf3fea64
+[2/2] STEP 1/11: FROM node:20-alpine AS runner
+[2/2] STEP 2/11: WORKDIR /app
+--> Using cache e1a8efeb910ec1940c76ff98d5cead6bdb376a02e7cc6d53756e947b194bf972
+--> e1a8efeb910e
+[2/2] STEP 3/11: ENV NODE_ENV=production
+--> Using cache 8b5b2840dfd674c634b4a0560b4c8640bf679a1a82fcaa55ce4bb01d2593e724
+--> 8b5b2840dfd6
+[2/2] STEP 4/11: RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+--> Using cache 0fc9106021eb8db67006021fd9b29fef64f8f3f1b1413640887180819d538e00
+--> 0fc9106021eb
+[2/2] STEP 5/11: COPY --from=builder /app/.next/standalone ./
+--> Using cache 8a12e089791be64452ba37774314b590d3212a4571ff6a69dade9ef6bae80215
+--> 8a12e089791b
+[2/2] STEP 6/11: COPY --from=builder /app/.next/static ./.next/static
+--> Using cache 2cbf229a0b226c691670de8ed3e7c72b24a349ade26b0735b2c975e2a54aebc4
+--> 2cbf229a0b22
+[2/2] STEP 7/11: COPY --from=builder /app/public ./public
+--> Using cache 84a9a9b86adaa80258616647d3145f5f4359b54e828f03cb46ce749a2357b981
+--> 84a9a9b86ada
+[2/2] STEP 8/11: USER nextjs
+--> Using cache 1113913e91bb0cb90ed0254393043d0a58d58fe23758b423ecfbe8164241676b
+--> 1113913e91bb
+[2/2] STEP 9/11: EXPOSE 3000
+--> Using cache d8fe9b7065b833cb037280312a7dbd5217003847e83269221efffbece5fca206
+--> d8fe9b7065b8
+[2/2] STEP 10/11: ENV PORT=3000
+--> Using cache e1ffb9397452fe2dee4354f1d9a67462a62d512d34284e70f91b5efb93072116
+--> e1ffb9397452
+[2/2] STEP 11/11: CMD ["node", "server.js"]
+--> Using cache a32a3b4babe8a83e46f312bfd16407d66d6d00785e33219d9301964a805f9179
+[2/2] COMMIT podman-cockpit-deployment_nextjs
+--> a32a3b4babe8
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+a32a3b4babe8a83e46f312bfd16407d66d6d00785e33219d9301964a805f9179
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM nginx:1.27-alpine
+STEP 2/7: RUN rm /etc/nginx/conf.d/default.conf
+--> Using cache d15050d152854d9b570ccfc82c4d3313c91f83f59cfa5b19437997e215f5e233
+--> d15050d15285
+STEP 3/7: COPY nginx.conf /etc/nginx/nginx.conf
+--> Using cache 4800991876b42ee4ba0e8242477aee6f2f50b2e077371f50d51571600222a373
+--> 4800991876b4
+STEP 4/7: COPY conf.d/ /etc/nginx/conf.d/
+--> Using cache deaf5a3af839a29677a52bab1fafacf39d1be20b716c687a8517ef4319fafc54
+--> deaf5a3af839
+STEP 5/7: RUN mkdir -p /etc/nginx/ssl
+--> Using cache 985768dfd127be7ebd69974e3809d67301430bc1b61bcb8bddf2cb476b8263d1
+--> 985768dfd127
+STEP 6/7: EXPOSE 80 443
+--> Using cache f71a38a031c54fe08903b6156902cb12ec7f415a3472afa74e1a32db9aa43d14
+--> f71a38a031c5
+STEP 7/7: CMD ["nginx", "-g", "daemon off;"]
+--> Using cache da7849d4850c0a325e7029f15bc1ff2b893eb57051249dc28808922370bd1559
+COMMIT podman-cockpit-deployment_nginx
+--> da7849d4850c
+Successfully tagged localhost/podman-cockpit-deployment_nginx:latest
+da7849d4850c0a325e7029f15bc1ff2b893eb57051249dc28808922370bd1559
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://medusa:9000 -e NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_test -e NEXT_PUBLIC_BASE_URL=http://localhost -e NEXT_PUBLIC_DEFAULT_REGION=us -e MEDUSA_REVALIDATION_SECRET=198c1670728e1f9c7630761e2c1340fa -e MEDUSA_BACKEND_URL=http://medusa:9000 --net podman-cockpit-deployment_frontend --network-alias nextjs --restart unless-stopped podman-cockpit-deployment_nextjs
+c43b1ce27a42e9729e0243d9caccd0f9bd31b51d4f9294a9630364e3ef3fcef1
+exit code: 0
+podman volume inspect podman-cockpit-deployment_pgdata || podman volume create podman-cockpit-deployment_pgdata
+['podman', 'volume', 'inspect', 'podman-cockpit-deployment_pgdata']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=postgres-ecommerce -d --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=postgres -e POSTGRES_DB=medusa -e POSTGRES_USER=medusa -e POSTGRES_PASSWORD=MiTienda2026!segura -v podman-cockpit-deployment_pgdata:/var/lib/postgresql/data --net podman-cockpit-deployment_backend --network-alias postgres --restart unless-stopped --healthcheck-command /bin/sh -c 'pg_isready -U medusa -d medusa' --healthcheck-interval 5s --healthcheck-timeout 5s --healthcheck-retries 5 postgres:17-alpine
+4cce5c8801cd13d819d0052c4bc60cc315c05977515949c96a391032b2fbd3b2
+exit code: 0
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_backend']
+podman run --name=medusa-ecommerce -d --requires=postgres-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=medusa -e NODE_ENV=production -e DATABASE_URL=postgresql://medusa:MiTienda2026!segura@postgres:5432/medusa -e JWT_SECRET=61d64b3b6660b627160a1e4d744d405631fac62833d0442e7cd67a6a37903b9e -e COOKIE_SECRET=bc1f6af975d368836475c192d9b0b68879fe10c6bf186a6bdb15e4dce1559658 -e STORE_CORS=http://localhost,https://localhost -e ADMIN_CORS=http://localhost,https://localhost -e AUTH_CORS=http://localhost,https://localhost --net podman-cockpit-deployment_frontend,podman-cockpit-deployment_backend --network-alias medusa --restart unless-stopped medusajs/medusa:latest
+Resolving "medusajs/medusa" using unqualified-search registries (/etc/containers/registries.conf.d/docker-io.conf)
+Trying to pull docker.io/medusajs/medusa:latest...
+Error: initializing source docker://medusajs/medusa:latest: reading manifest latest in docker.io/medusajs/medusa: requested access to the resource is denied
+exit code: 125
+podman start medusa-ecommerce
+Error: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nginx-ecommerce -d --requires=medusa-ecommerce,nextjs-ecommerce,postgres-ecommerce --label io.podman.compose.config-hash=96746be0aa9fe0f1392e7f63e56f119be38663d8065e96c2249d4492706aa521 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --net podman-cockpit-deployment_frontend --network-alias nginx -p 80:80 -p 443:443 --restart unless-stopped podman-cockpit-deployment_nginx
+Error: "medusa-ecommerce" is not a valid container, cannot be used as a dependency: no container with name or ID "medusa-ecommerce" found: no such container
+exit code: 125
+podman start nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo git config --global --add safe.directory /opt/podman-cockpit-deployment
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ cd /opt/podman-cockpit-deployment
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo git pull
+remote: Enumerating objects: 46, done.
+remote: Counting objects: 100% (46/46), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 30 (delta 21), reused 29 (delta 20), pack-reused 0 (from 0)
+Unpacking objects: 100% (30/30), 5.38 KiB | 501.00 KiB/s, done.
+From https://github.com/Damianpiazz/podman-cockpit-deployment
+   9946128..193e8bb  main       -> origin/main
+Updating 9946128..193e8bb
+Fast-forward
+ .env.example               |  19 ++-------
+ .gitignore                 |   1 +
+ compose.yml                |  63 ++---------------------------
+ docs/DEPLOY.md             | 255 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ frontend/Dockerfile        |  12 +-----
+ nginx/Dockerfile           |   2 +-
+ nginx/conf.d/default.conf  |  53 +------------------------
+ terraform/providers.tf     |   1 +
+ terraform/scripts/setup.sh |  37 +++++++----------
+ terraform/variables.tf     |   8 +---
+ 10 files changed, 283 insertions(+), 168 deletions(-)
+ create mode 100644 docs/DEPLOY.md
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo podman compose down --remove-orphans
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman stop -t 10 nginx-ecommerce
+Error: no container with name or ID "nginx-ecommerce" found: no such container
+exit code: 125
+podman stop -t 10 nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+podman rm nginx-ecommerce
+Error: no container with ID or name "nginx-ecommerce" found: no such container
+exit code: 1
+podman rm nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ .Names }}']
+podman stop postgres-ecommerce
+postgres-ecommerce
+exit code: 0
+podman rm postgres-ecommerce
+postgres-ecommerce
+exit code: 0
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo podman compose up -d --build
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/2] STEP 1/12: FROM docker.io/library/node:20-alpine AS builder
+[1/2] STEP 2/12: RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+--> Using cache 34e95a509f374ae49e33a5fa6cb33b33c043670b2ea5bf55eb824106935373cb
+--> 34e95a509f37
+[1/2] STEP 3/12: WORKDIR /app
+--> Using cache b1950e09ccf3d3118e77040abb9e15642fd2cc50e91da6a7d843e332658be3ca
+--> b1950e09ccf3
+[1/2] STEP 4/12: COPY package.json yarn.lock .yarnrc.yml ./
+--> Using cache 704fd44165dc96cb1845884b3bc102d95597cfd4e7830bed916453b223fad0af
+--> 704fd44165dc
+[1/2] STEP 5/12: COPY .yarn .yarn
+--> Using cache 8844cf4f7207cbe39e3a3c930c86dc3e0be90908a8b83bdb1943ce5eda96e737
+--> 8844cf4f7207
+[1/2] STEP 6/12: RUN yarn install --immutable
+--> Using cache d38e7b31540eea933cc4bd7d8d6fb147642abfd14aa2cbf5ebcfc4ee2536e1bb
+--> d38e7b31540e
+[1/2] STEP 7/12: COPY . .
+--> 42d5c8cae148
+[1/2] STEP 8/12: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> 04d9efe4ed8d
+[1/2] STEP 9/12: ARG NEXT_PUBLIC_DEFAULT_REGION=us
+--> 13c3a7e4b3c8
+[1/2] STEP 10/12: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> e1eecee13832
+[1/2] STEP 11/12: ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+--> 6f7103c0cf61
+[1/2] STEP 12/12: RUN yarn build
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.3.9
+
+   Creating an optimized production build ...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled successfully in 66s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+Failed to generate static paths for product pages: Error setting up the request: fetch failed.
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                Size  First Load JS
+┌ ○ /_not-found                                           152 B         102 kB
+├ ƒ /[countryCode]                                        629 B         338 kB
+├ ƒ /[countryCode]/account                              3.71 kB         118 kB
+├ ƒ /[countryCode]/account/addresses                    6.96 kB         137 kB
+├ ƒ /[countryCode]/account/orders                       3.89 kB         342 kB
+├ ƒ /[countryCode]/account/orders/details/[id]          5.61 kB         125 kB
+├ ƒ /[countryCode]/account/profile                      8.95 kB         130 kB
+├ ƒ /[countryCode]/cart                                  2.6 kB         345 kB
+├ ● /[countryCode]/categories/[...category]             1.75 kB         339 kB
+├ ƒ /[countryCode]/checkout                             23.3 kB         402 kB
+├ ● /[countryCode]/collections/[handle]                 1.77 kB         339 kB
+├ ƒ /[countryCode]/order/[id]/confirmed                 1.96 kB         340 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]          1.22 kB         330 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/accept     434 B         329 kB
+├ ƒ /[countryCode]/order/[id]/transfer/[token]/decline    434 B         329 kB
+├ ● /[countryCode]/products/[handle]                    11.1 kB         373 kB
+├ ƒ /[countryCode]/store                                1.77 kB         339 kB
+├ ○ /opengraph-image.jpg                                    0 B            0 B
+└ ○ /twitter-image.jpg                                      0 B            0 B
++ First Load JS shared by all                            102 kB
+  ├ chunks/1684-07504df4c719039c.js                     46.6 kB
+  ├ chunks/4bd1b696-1415c063f493bcc3.js                 53.2 kB
+  └ other shared chunks (total)                         2.01 kB
+
+
+ƒ Middleware                                              34 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+--> 2fa5a636fc1c
+[2/2] STEP 1/11: FROM docker.io/library/node:20-alpine AS runner
+[2/2] STEP 2/11: WORKDIR /app
+--> Using cache e1a8efeb910ec1940c76ff98d5cead6bdb376a02e7cc6d53756e947b194bf972
+--> e1a8efeb910e
+[2/2] STEP 3/11: ENV NODE_ENV=production
+--> Using cache 8b5b2840dfd674c634b4a0560b4c8640bf679a1a82fcaa55ce4bb01d2593e724
+--> 8b5b2840dfd6
+[2/2] STEP 4/11: RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+--> Using cache 0fc9106021eb8db67006021fd9b29fef64f8f3f1b1413640887180819d538e00
+--> 0fc9106021eb
+[2/2] STEP 5/11: COPY --from=builder /app/.next/standalone ./
+--> 4907a2001dc6
+[2/2] STEP 6/11: COPY --from=builder /app/.next/static ./.next/static
+--> 3e4f369d7a99
+[2/2] STEP 7/11: COPY --from=builder /app/public ./public
+--> 3573fa664981
+[2/2] STEP 8/11: USER nextjs
+--> 24f6fe8baf38
+[2/2] STEP 9/11: EXPOSE 3000
+--> ef70a228faa1
+[2/2] STEP 10/11: ENV PORT=3000
+--> 3707915303ed
+[2/2] STEP 11/11: CMD ["node", "server.js"]
+[2/2] COMMIT podman-cockpit-deployment_nextjs
+--> 8e14647e4abf
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+8e14647e4abfbd76bf1b33dc6a2c5b1b95ddb87f62268cbfc969b89a216ddee8
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM docker.io/library/nginx:1.27-alpine
+STEP 2/7: RUN rm /etc/nginx/conf.d/default.conf
+--> Using cache d15050d152854d9b570ccfc82c4d3313c91f83f59cfa5b19437997e215f5e233
+--> d15050d15285
+STEP 3/7: COPY nginx.conf /etc/nginx/nginx.conf
+--> Using cache 4800991876b42ee4ba0e8242477aee6f2f50b2e077371f50d51571600222a373
+--> 4800991876b4
+STEP 4/7: COPY conf.d/ /etc/nginx/conf.d/
+--> df53b658c201
+STEP 5/7: RUN mkdir -p /etc/nginx/ssl
+--> 8d07ca9a2cea
+STEP 6/7: EXPOSE 80 443
+--> 125e1257cbac
+STEP 7/7: CMD ["nginx", "-g", "daemon off;"]
+COMMIT podman-cockpit-deployment_nginx
+--> 1171114becd9
+Successfully tagged localhost/podman-cockpit-deployment_nginx:latest
+1171114becd9a499d0fa9c74fd08ba6f227a4726a494f9a87dd426ad84b0c864
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=ba2397b0ad0005e9cbc3e4f5b05c0773b5029695cd5083c6bfdb8c74cc2f2532 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e NEXT_PUBLIC_BASE_URL=http://localhost -e NEXT_PUBLIC_DEFAULT_REGION=us --net podman-cockpit-deployment_frontend --network-alias nextjs --restart unless-stopped podman-cockpit-deployment_nextjs
+579239394c5cb6f03dcae318c978b30592ef369f1534bd25c8200e7ba322588b
+exit code: 0
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nginx-ecommerce -d --requires=nextjs-ecommerce --label io.podman.compose.config-hash=ba2397b0ad0005e9cbc3e4f5b05c0773b5029695cd5083c6bfdb8c74cc2f2532 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --net podman-cockpit-deployment_frontend --network-alias nginx -p 80:80 -p 443:443 --restart unless-stopped podman-cockpit-deployment_nginx
+38552ee6a76811390e0c6e9cb6079424e0429c378719e5e5c5f593c5cd35ee3d
+exit code: 0
+
+---
+
+Nginx arrancó antes que Next.js y no pudo resolver el hostname docker.io. Es un problema clásico de podman-compose que no espera a que el dependiente esté listo. Restart nginx:
+sudo podman restart nginx-ecommerce
+Después verificá:
+curl -sk https://localhost
+
+---
+
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo git pull
+sudo podman compose down
+sudo podman compose up -d --build
+remote: Enumerating objects: 9, done.
+remote: Counting objects: 100% (9/9), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 5 (delta 3), reused 5 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (5/5), 549 bytes | 274.00 KiB/s, done.
+From https://github.com/Damianpiazz/podman-cockpit-deployment
+   193e8bb..c48aa1c  main       -> origin/main
+Updating 193e8bb..c48aa1c
+Fast-forward
+ nginx/conf.d/default.conf | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman stop -t 10 nginx-ecommerce
+nginx-ecommerce
+exit code: 0
+podman stop -t 10 nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+podman rm nginx-ecommerce
+nginx-ecommerce
+exit code: 0
+podman rm nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/2] STEP 1/12: FROM docker.io/library/node:20-alpine AS builder
+[1/2] STEP 2/12: RUN corepack enable && corepack prepare yarn@4.12.0 --activate
+--> Using cache 34e95a509f374ae49e33a5fa6cb33b33c043670b2ea5bf55eb824106935373cb
+--> 34e95a509f37
+[1/2] STEP 3/12: WORKDIR /app
+--> Using cache b1950e09ccf3d3118e77040abb9e15642fd2cc50e91da6a7d843e332658be3ca
+--> b1950e09ccf3
+[1/2] STEP 4/12: COPY package.json yarn.lock .yarnrc.yml ./
+--> Using cache 704fd44165dc96cb1845884b3bc102d95597cfd4e7830bed916453b223fad0af
+--> 704fd44165dc
+[1/2] STEP 5/12: COPY .yarn .yarn
+--> Using cache 8844cf4f7207cbe39e3a3c930c86dc3e0be90908a8b83bdb1943ce5eda96e737
+--> 8844cf4f7207
+[1/2] STEP 6/12: RUN yarn install --immutable
+--> Using cache d38e7b31540eea933cc4bd7d8d6fb147642abfd14aa2cbf5ebcfc4ee2536e1bb
+--> d38e7b31540e
+[1/2] STEP 7/12: COPY . .
+--> Using cache 42d5c8cae148de08ce967dc58cd2bd9ff681507fe2a28ea026bb84ef9b8595b6
+--> 42d5c8cae148
+[1/2] STEP 8/12: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> Using cache 04d9efe4ed8d27b2a911e30fc198978c2766f1d9b7cd0443e1bf97644163dd70
+--> 04d9efe4ed8d
+[1/2] STEP 9/12: ARG NEXT_PUBLIC_DEFAULT_REGION=us
+--> Using cache 13c3a7e4b3c8999ad745cd8783526434eba6340433205e454f720cef4aad15ec
+--> 13c3a7e4b3c8
+[1/2] STEP 10/12: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> Using cache e1eecee13832ce50f68838d5de1a2b21d764a542c87db17c0a8144edad7bbe6b
+--> e1eecee13832
+[1/2] STEP 11/12: ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
+--> Using cache 6f7103c0cf6194332575963af755133529d23eba85d84ffaeb04efb9d1ea5f26
+--> 6f7103c0cf61
+[1/2] STEP 12/12: RUN yarn build
+--> Using cache 2fa5a636fc1c5d25efab73a113077f1818fb9eb994648b7adcb7ac535d3cbf86
+--> 2fa5a636fc1c
+[2/2] STEP 1/11: FROM docker.io/library/node:20-alpine AS runner
+[2/2] STEP 2/11: WORKDIR /app
+--> Using cache e1a8efeb910ec1940c76ff98d5cead6bdb376a02e7cc6d53756e947b194bf972
+--> e1a8efeb910e
+[2/2] STEP 3/11: ENV NODE_ENV=production
+--> Using cache 8b5b2840dfd674c634b4a0560b4c8640bf679a1a82fcaa55ce4bb01d2593e724
+--> 8b5b2840dfd6
+[2/2] STEP 4/11: RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+--> Using cache 0fc9106021eb8db67006021fd9b29fef64f8f3f1b1413640887180819d538e00
+--> 0fc9106021eb
+[2/2] STEP 5/11: COPY --from=builder /app/.next/standalone ./
+--> Using cache 4907a2001dc6880c7ca00bdd73824a207ba7929b8c0238c74ab08bc4782013f7
+--> 4907a2001dc6
+[2/2] STEP 6/11: COPY --from=builder /app/.next/static ./.next/static
+--> Using cache 3e4f369d7a9944df127bfcd83c577f7376c94a27d2422746c630ad864d9f92c2
+--> 3e4f369d7a99
+[2/2] STEP 7/11: COPY --from=builder /app/public ./public
+--> Using cache 3573fa664981c81764ff5f69816d4a31fa51fcc67cbb62fe252d33b6bf128c8c
+--> 3573fa664981
+[2/2] STEP 8/11: USER nextjs
+--> Using cache 24f6fe8baf388dba24d8ef9d5cb1c120689f65b171fba66a70c54f2c5f374f14
+--> 24f6fe8baf38
+[2/2] STEP 9/11: EXPOSE 3000
+--> Using cache ef70a228faa14680df1faf3dd1938a5df13d57fd1ffeddf19343e8ec2218d9c3
+--> ef70a228faa1
+[2/2] STEP 10/11: ENV PORT=3000
+--> Using cache 3707915303ede980a29f46406513b83b436240b85e4792dc42f8a67893e3746b
+--> 3707915303ed
+[2/2] STEP 11/11: CMD ["node", "server.js"]
+--> Using cache 8e14647e4abfbd76bf1b33dc6a2c5b1b95ddb87f62268cbfc969b89a216ddee8
+[2/2] COMMIT podman-cockpit-deployment_nextjs
+--> 8e14647e4abf
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+8e14647e4abfbd76bf1b33dc6a2c5b1b95ddb87f62268cbfc969b89a216ddee8
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM docker.io/library/nginx:1.27-alpine
+STEP 2/7: RUN rm /etc/nginx/conf.d/default.conf
+--> Using cache d15050d152854d9b570ccfc82c4d3313c91f83f59cfa5b19437997e215f5e233
+--> d15050d15285
+STEP 3/7: COPY nginx.conf /etc/nginx/nginx.conf
+--> Using cache 4800991876b42ee4ba0e8242477aee6f2f50b2e077371f50d51571600222a373
+--> 4800991876b4
+STEP 4/7: COPY conf.d/ /etc/nginx/conf.d/
+--> e449a039ed1c
+STEP 5/7: RUN mkdir -p /etc/nginx/ssl
+--> 0d2544bc34c5
+STEP 6/7: EXPOSE 80 443
+--> 9f8165d1a722
+STEP 7/7: CMD ["nginx", "-g", "daemon off;"]
+COMMIT podman-cockpit-deployment_nginx
+--> 374f9515f291
+Successfully tagged localhost/podman-cockpit-deployment_nginx:latest
+374f9515f2912e5240d2f7061425196346beb146fedb26ba38a33f91e25639f9
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=ba2397b0ad0005e9cbc3e4f5b05c0773b5029695cd5083c6bfdb8c74cc2f2532 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e NEXT_PUBLIC_BASE_URL=http://localhost -e NEXT_PUBLIC_DEFAULT_REGION=us --net podman-cockpit-deployment_frontend --network-alias nextjs --restart unless-stopped podman-cockpit-deployment_nextjs
+fec851d52cdbc91709cc37a9f126b863f9691edfae64f2b1c744c0e206fde6d0
+exit code: 0
+['podman', 'network', 'exists', 'podman-cockpit-deployment_frontend']
+podman run --name=nginx-ecommerce -d --requires=nextjs-ecommerce --label io.podman.compose.config-hash=ba2397b0ad0005e9cbc3e4f5b05c0773b5029695cd5083c6bfdb8c74cc2f2532 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --net podman-cockpit-deployment_frontend --network-alias nginx -p 80:80 -p 443:443 --restart unless-stopped podman-cockpit-deployment_nginx
+6c1fdf0fcb8717e2a97406be95215a7ac8ba09687f4491de92a5b446c0b6d534
+exit code: 0
+
+--- 
+
+Verifico que funcione:
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+NAMES             STATUS         PORTS
+nextjs-ecommerce  Up 25 seconds  
+nginx-ecommerce   Up 23 seconds  0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+
+---
+
+Verifico que el sitio responda:
+$ curl -sk -o /dev/null -w "%{http_code}" https://20.164.202.187
+Invoke-WebRequest : No se puede enlazar el par�metro 'WebSession'. No se puede convertir el valor "%{http_code}" de 
+tipo "System.String" al tipo "Microsoft.PowerShell.Commands.WebRequestSession".
+En l�nea: 1 Car�cter: 26
++ curl -sk -o /dev/null -w "%{http_code}" https://20.164.202.187
++                          ~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (:) [Invoke-WebRequest], ParameterBindingException
+    + FullyQualifiedErrorId : CannotConvertArgumentNoMessage,Microsoft.PowerShell.Commands.InvokeWebRequestCommand
++ Thought: 192ms
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "curl -sk -o /dev/null -w '%{http_code}' https://localhost"
+502
++ Thought: 343ms
+Nginx está corriendo pero da 502 Bad Gateway — el DNS ya no falla (antes crasheaba), pero Next.js no responde. Investigo:
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman logs nextjs-ecommerce 2>&1 | tail -30"
+▲ Next.js 15.3.9
+   - Local:        http://fec851d52cdb:3000
+   - Network:      http://fec851d52cdb:3000
+
+ ✓ Starting...
+ ✓ Ready in 141ms
++ Thought: 832ms
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce ping -c1 nextjs 2>&1; echo '---'; sudo podman exec nginx-ecommerce cat /etc/resolv.conf 2>&1"
+ping: bad address 'nextjs'
+---
+search dns.podman
+nameserver 10.89.0.1
++ Thought: 2.9s
+¡Ahí está el problema! Podman usa DNS 10.89.0.1, no 10.0.0.10 (que es de Docker). Arreglo el resolver:
+← Edit nginx\conf.d\default.conf
+
+# -----------------------------------------------------------
+# Next.js Storefront (resolver dinámico para Podman)
+# -----------------------------------------------------------
+resolver 10.0.0.10 valid=10s ipv6=off;
+resolver 10.89.0.1 valid=10s ipv6=off;
+set $nextjs_upstream http://nextjs:3000;
+
+location / {
+    proxy_pass         $nextjs_upstream;
++ Thought: 4.1s
+Ahora pusheo y rebuild:
+$ git add nginx/conf.d/default.conf; git commit -m "fix: use podman dns 10.89.0.1 instead of docker default"; git push
+warning: in the working copy of 'nginx/conf.d/default.conf', LF will be replaced by CRLF the next time Git touches it
+[main 19ea12d] fix: use podman dns 10.89.0.1 instead of docker default
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+To https://github.com/Damianpiazz/podman-cockpit-deployment.git
+   c48aa1c..19ea12d  main -> main
++ Thought: 4.2s
+ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "cd /opt/podman-cockpit-deployment && sudo git pull && sudo podman compose down && sudo podman compose up -d --build"
+From https://github.com/Damianpiazz/podman-cockpit-deployment
+   c48aa1c..19ea12d  main       -> origin/main
+Updating c48aa1c..19ea12d
+Fast-forward
+ nginx/conf.d/default.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+…
+
+---
+
+Ambos contenedores levantados. Ahora verifico DNS + sitio:
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce nslookup nextjs 10.89.0.1 2>&1; echo '---STATUS---'; curl -sk -o /dev/null -w '%{http_code}' https://localhost"
+;; connection timed out; no servers could be reached
+
+---STATUS---
+502
++ Thought: 3.7s
+El DNS no resuelve. Investigo la red de Podman:
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman network inspect podman-cockpit-deployment_frontend 2>&1 | head -40"
+[
+     {
+          "name": "podman-cockpit-deployment_frontend",
+          "id": "9d1b0319c4b9f258dbbdca688ef3ff2dce39ab697d647d49f874a15dc545e0e3",
+          "driver": "bridge",
+          "network_interface": "podman1",
+          "created": "2026-07-14T22:17:15.631882117Z",
+          "subnets": [
+               {
+                    "subnet": "10.89.0.0/24",
+                    "gateway": "10.89.0.1"
+               }
+          ],
+          "ipv6_enabled": false,
+          "internal": false,
+          "dns_enabled": true,
+          "labels": {
+               "com.docker.compose.project": "podman-cockpit-deployment",
+               "io.podman.compose.project": "podman-cockpit-deployment"
+          },
+          "ipam_options": {
+               "driver": "host-local"
+          }
+     }
+]
+Click to collapse
++ Thought: 1.5s
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce getent hosts nextjs 2>&1; echo '---'; sudo podman exec nginx-ecommerce cat /etc/resolv.conf 2>&1; echo '---'; sudo podman exec nextjs-ecommerce hostname -i 2>&1"
+---
+search dns.podman
+nameserver 10.89.0.1
+---
+10.89.0.9
++ Thought: 3.4s
+El DNS de Podman (Aardvark-DNS) no resuelve el nombre nextjs desde el contenedor nginx. Pruebo otro approach — en vez de depender de DNS, uso la IP directamente:
+$ ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce nslookup nextjs 2>&1; echo '==='; sudo podman inspect nextjs-ecommerce --format '{{.NetworkSettings.Networks}}' 2>&1"
+;; connection timed out; no servers could be reached
+
+===
+map[podman-cockpit-deployment_frontend:0xc000516ea0]
++ Thought: 854ms
+ssh -i "$env:USERPROFILE\.ssh\azure_vm.pem" -o StrictHostKeyChecking=no azureuser@20.164.202.187 "sudo podman exec nginx-ecommerce wget -q -O /dev/null http://nextjs:3000 2>&1; echo 'exit:'$?; sudo podman exec nginx-ecommerce cat /etc/nsswitch.conf 2>&1"
+
+---
+
+Me di cuenta que tenia algo mal en el fronted. lo cambio por otro template.
+
+---
+
+sudo passwd azureuser
+
+para crear la contraseña para cockpit
+
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo passwd azureuser
+New password: 
+Retype new password: 
+passwd: password updated successfully
+
+---
+
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo podman compose down
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman stop -t 10 nginx-ecommerce
+nginx-ecommerce
+exit code: 0
+podman stop -t 10 nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+podman rm nginx-ecommerce
+nginx-ecommerce
+exit code: 0
+podman rm nextjs-ecommerce
+nextjs-ecommerce
+exit code: 0
+azureuser@vm-podman-ecommerce:/opt/podman-cockpit-deployment$ sudo podman compose up -d --build
+>>>> Executing external compose provider "/usr/bin/podman-compose". Please refer to the documentation for details. <<<<
+
+podman-compose version: 1.0.6
+['podman', '--version', '']
+using podman version: 4.9.3
+** excluding:  set()
+podman build -f ./frontend/Dockerfile -t podman-cockpit-deployment_nextjs ./frontend
+[1/4] STEP 1/2: FROM docker.io/library/node:20-alpine AS base
+[1/4] STEP 2/2: RUN corepack enable && corepack prepare pnpm@9 --activate
+--> Using cache 50e5ed81e56010f6acd8c5c0c8d7e9a96f4817dda6bc6462bb7e45f961552541
+--> 50e5ed81e560
+[2/4] STEP 1/4: FROM 50e5ed81e56010f6acd8c5c0c8d7e9a96f4817dda6bc6462bb7e45f961552541 AS deps
+[2/4] STEP 2/4: WORKDIR /app
+--> Using cache 96bd0c7d566c921c9cc9e9810c9b8af17335fcc70e62c38cc2e6542739af34a6
+--> 96bd0c7d566c
+[2/4] STEP 3/4: COPY package.json pnpm-lock.yaml ./
+--> Using cache 5502a615029b4b51c72d23f157757a31c6765e2652c49f5e34cb78833e5b5c59
+--> 5502a615029b
+[2/4] STEP 4/4: RUN pnpm install --frozen-lockfile
+--> Using cache dc3c4d5c7a876691aa9a051464b7c4a590bebf0a106b6e9622e074c7682c3242
+--> dc3c4d5c7a87
+[3/4] STEP 1/17: FROM 50e5ed81e56010f6acd8c5c0c8d7e9a96f4817dda6bc6462bb7e45f961552541 AS builder
+[3/4] STEP 2/17: WORKDIR /app
+--> Using cache 96bd0c7d566c921c9cc9e9810c9b8af17335fcc70e62c38cc2e6542739af34a6
+--> 96bd0c7d566c
+[3/4] STEP 3/17: COPY --from=deps /app/node_modules ./node_modules
+--> Using cache b86af919a4d68df2eb2fafd1c61cc53a43a94bbe68475f50ab01677bd35471f8
+--> b86af919a4d6
+[3/4] STEP 4/17: COPY . .
+--> Using cache 2578c39afe6f2cb6c22ff4a092dc0936c1855803975894d6943479b26ad1dc31
+--> 2578c39afe6f
+[3/4] STEP 5/17: ARG NEXT_PUBLIC_BASE_URL=http://localhost
+--> Using cache 2bc7175a32462df8ed39f41ba5f63369dec75f43394e2ceaf6c56c32652ba623
+--> 2bc7175a3246
+[3/4] STEP 6/17: ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+--> Using cache 6bc0af8c1c547c088d762394878aa18b0238682517ff4a4f1cfcf3c578141ee3
+--> 6bc0af8c1c54
+[3/4] STEP 7/17: ARG SHOPIFY_STORE_DOMAIN=""
+--> Using cache cd335e8be5e8d0f83b548065d8cedd50b3c6b2cbd476a9433cdc5f8abeb1e8af
+--> cd335e8be5e8
+[3/4] STEP 8/17: ARG SHOPIFY_STOREFRONT_ACCESS_TOKEN=""
+--> Using cache 0f841728ea550932ae0029e94ea80354c807a73fbe8267e9e0a014b6b72efd00
+--> 0f841728ea55
+[3/4] STEP 9/17: ARG SHOPIFY_REVALIDATION_SECRET=""
+--> Using cache 6ed5beee10aff49115a8804d5b323e9771e682955eaef10ae2585e1b4dd1d7b0
+--> 6ed5beee10af
+[3/4] STEP 10/17: ARG COMPANY_NAME="Vercel Inc."
+--> Using cache 4ed6e5fa652de0413a2baab515513c377668f4e27ff327105509d33a5f0c40cc
+--> 4ed6e5fa652d
+[3/4] STEP 11/17: ARG SITE_NAME="Next.js Commerce"
+--> Using cache 5c14d48fcd6e77ebd93df3ad1ef5de1702efa9ec7e49e866f990f17d070035df
+--> 5c14d48fcd6e
+[3/4] STEP 12/17: ENV SHOPIFY_STORE_DOMAIN=$SHOPIFY_STORE_DOMAIN
+--> Using cache d3a3c64b786bc1da04256812fb7f6c6cee6a3d9fb8f6edd39e385d8f5575cabc
+--> d3a3c64b786b
+[3/4] STEP 13/17: ENV SHOPIFY_STOREFRONT_ACCESS_TOKEN=$SHOPIFY_STOREFRONT_ACCESS_TOKEN
+--> Using cache 0da1ba51d735fb132124817425507cc5e684476f67febc76775a11964f29a3af
+--> 0da1ba51d735
+[3/4] STEP 14/17: ENV SHOPIFY_REVALIDATION_SECRET=$SHOPIFY_REVALIDATION_SECRET
+--> Using cache a43a952f7459f57bdbf9f517d1a680728e546ff8f07c48f081fc8e14f823b1e8
+--> a43a952f7459
+[3/4] STEP 15/17: ENV COMPANY_NAME=$COMPANY_NAME
+--> Using cache 044f6d5eff9411b927138739c8b7378f2dbc58ad483c8b0f749e27d0d5ec0474
+--> 044f6d5eff94
+[3/4] STEP 16/17: ENV SITE_NAME=$SITE_NAME
+--> Using cache 6d766bc3fd027b39a6d62fb407a4290c42a27195da017b27c76c281c74395a7c
+--> 6d766bc3fd02
+[3/4] STEP 17/17: RUN pnpm build
+--> Using cache 87204c04998b58a884746c8e0a9028c57a527d9acbe54cf690917422a20bee50
+--> 87204c04998b
+[4/4] STEP 1/11: FROM 50e5ed81e56010f6acd8c5c0c8d7e9a96f4817dda6bc6462bb7e45f961552541 AS runner
+[4/4] STEP 2/11: WORKDIR /app
+--> Using cache 96bd0c7d566c921c9cc9e9810c9b8af17335fcc70e62c38cc2e6542739af34a6
+--> 96bd0c7d566c
+[4/4] STEP 3/11: ENV NODE_ENV=production
+--> Using cache cf07a676d58dce6b03059906a6568293af08177e493c7a670b99d0b241095a7e
+--> cf07a676d58d
+[4/4] STEP 4/11: RUN addgroup --system --gid 1001 nodejs &&     adduser  --system --uid 1001 nextjs
+--> Using cache e64fec663f583b80ac53b0c3fc59d11aae73da18b1fa455f0bd88eff503529b8
+--> e64fec663f58
+[4/4] STEP 5/11: COPY --from=builder /app/public ./public
+--> Using cache d3cb5e402c72b2119fe76268d09220a4ecabde4c5dcc5102ae6c03728933c29f
+--> d3cb5e402c72
+[4/4] STEP 6/11: COPY --from=builder /app/.next/standalone ./
+--> Using cache 955180d736f3d762235b8a5d25d2df6ca458feb99ba87ca1c881ec67e1d3e277
+--> 955180d736f3
+[4/4] STEP 7/11: COPY --from=builder /app/.next/static ./.next/static
+--> Using cache 36d4f187dc97ba63e1115ff670df3bd087dab06cc7e1e97da3a4d38689c7962d
+--> 36d4f187dc97
+[4/4] STEP 8/11: USER nextjs
+--> Using cache 17de0ed452f5d420c83982b6d06206f5fcd7e52dc24aa10094fb98e0b71ab3a5
+--> 17de0ed452f5
+[4/4] STEP 9/11: EXPOSE 3000
+--> Using cache 7c3d4e36fefc96bcb1ed0093714329549af17018255156f278e93389e3cdc995
+--> 7c3d4e36fefc
+[4/4] STEP 10/11: ENV PORT=3000
+--> Using cache 029407759095a2fcf169319a488c493341f2e2741541cc614374cb5b0b8678aa
+--> 029407759095
+[4/4] STEP 11/11: CMD ["node", "server.js"]
+--> Using cache b62192a69abf63415cad1e44e5d7ade2ff0251d05f315defe804a2524d45dfd7
+[4/4] COMMIT podman-cockpit-deployment_nextjs
+--> b62192a69abf
+Successfully tagged localhost/podman-cockpit-deployment_nextjs:latest
+b62192a69abf63415cad1e44e5d7ade2ff0251d05f315defe804a2524d45dfd7
+exit code: 0
+podman build -f ./nginx/Dockerfile -t podman-cockpit-deployment_nginx ./nginx
+STEP 1/7: FROM docker.io/library/nginx:1.27-alpine
+STEP 2/7: RUN rm /etc/nginx/conf.d/default.conf
+--> Using cache d15050d152854d9b570ccfc82c4d3313c91f83f59cfa5b19437997e215f5e233
+--> d15050d15285
+STEP 3/7: COPY nginx.conf /etc/nginx/nginx.conf
+--> Using cache 4800991876b42ee4ba0e8242477aee6f2f50b2e077371f50d51571600222a373
+--> 4800991876b4
+STEP 4/7: COPY conf.d/ /etc/nginx/conf.d/
+--> Using cache 2dcf0dcc4160a25448474f5a3c4b87d09231f01b9d79ca27a8c45fdc6b3d1fe7
+--> 2dcf0dcc4160
+STEP 5/7: RUN mkdir -p /etc/nginx/ssl
+--> Using cache 08332035e2c3e95a7cd2315e7549a00616033ddbc5a23f9c053c3b68a044cf38
+--> 08332035e2c3
+STEP 6/7: EXPOSE 80 443
+--> Using cache 740125a9ad732dfc92c2415465896db9f7fb23afc0bc2b6c397af373c8b6393a
+--> 740125a9ad73
+STEP 7/7: CMD ["nginx", "-g", "daemon off;"]
+--> Using cache 1932886356923514a49ce8998371ce481f6f0acd1b41f5be390a9ff7acc1c3ed
+COMMIT podman-cockpit-deployment_nginx
+--> 193288635692
+Successfully tagged localhost/podman-cockpit-deployment_nginx:latest
+1932886356923514a49ce8998371ce481f6f0acd1b41f5be390a9ff7acc1c3ed
+exit code: 0
+['podman', 'ps', '--filter', 'label=io.podman.compose.project=podman-cockpit-deployment', '-a', '--format', '{{ index .Labels "io.podman.compose.config-hash"}}']
+podman run --name=nextjs-ecommerce -d --label io.podman.compose.config-hash=a9ec4469ee331f036851381b15f0374c01f954f4c6fea15c36964abe533c8050 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nextjs -e HOSTNAME=0.0.0.0 -e NEXT_PUBLIC_BASE_URL=http://localhost -e SHOPIFY_STORE_DOMAIN= -e SHOPIFY_STOREFRONT_ACCESS_TOKEN= -e SHOPIFY_REVALIDATION_SECRET= -e COMPANY_NAME=Vercel Inc. -e SITE_NAME=Next.js Commerce --network host --restart unless-stopped podman-cockpit-deployment_nextjs
+442a2a7ce115dcb3c4b44479cda80ef627777a2cc36c3301ffae6ba510bf6d9d
+exit code: 0
+podman run --name=nginx-ecommerce -d --requires=nextjs-ecommerce --label io.podman.compose.config-hash=a9ec4469ee331f036851381b15f0374c01f954f4c6fea15c36964abe533c8050 --label io.podman.compose.project=podman-cockpit-deployment --label io.podman.compose.version=1.0.6 --label PODMAN_SYSTEMD_UNIT=podman-compose@podman-cockpit-deployment.service --label com.docker.compose.project=podman-cockpit-deployment --label com.docker.compose.project.working_dir=/opt/podman-cockpit-deployment --label com.docker.compose.project.config_files=compose.yml --label com.docker.compose.container-number=1 --label com.docker.compose.service=nginx -v /opt/podman-cockpit-deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /opt/podman-cockpit-deployment/nginx/conf.d:/etc/nginx/conf.d:ro -v /opt/podman-cockpit-deployment/nginx/ssl:/etc/nginx/ssl:ro --network host --restart unless-stopped podman-cockpit-deployment_nginx
+565468dbcbed5cdecc369dc588865b64e1b221d91fd52ce9a3d5f7a4d673aa0f
+exit code: 0
+
+---
+
+...
+
+erce" -> null
+      - resource_group_name = "rg-podman-ecommerce" -> null
+      - security_rule       = [
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "22"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "allow-ssh"
+              - priority                                   = 100
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "443"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "allow-https"
+              - priority                                   = 300
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "80"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "allow-http"
+              - priority                                   = 200
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "9090"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "allow-cockpit"
+              - priority                                   = 400
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                = {} -> null
+    }
+
+  # azurerm_network_security_rule.cockpit will be destroyed
+  - resource "azurerm_network_security_rule" "cockpit" {
+      - access                                     = "Allow" -> null
+      - destination_address_prefix                 = "*" -> null
+      - destination_address_prefixes               = [] -> null
+      - destination_application_security_group_ids = [] -> null
+      - destination_port_range                     = "9090" -> null
+      - destination_port_ranges                    = [] -> null
+      - direction                                  = "Inbound" -> null
+      - id                                         = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-cockpit" -> null
+      - name                                       = "allow-cockpit" -> null
+      - network_security_group_name                = "nsg-vm-podman-ecommerce" -> null
+      - priority                                   = 400 -> null
+      - protocol                                   = "Tcp" -> null
+      - resource_group_name                        = "rg-podman-ecommerce" -> null
+      - source_address_prefix                      = "*" -> null
+      - source_address_prefixes                    = [] -> null
+      - source_application_security_group_ids      = [] -> null
+      - source_port_range                          = "*" -> null
+      - source_port_ranges                         = [] -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_network_security_rule.http will be destroyed
+  - resource "azurerm_network_security_rule" "http" {
+      - access                                     = "Allow" -> null
+      - destination_address_prefix                 = "*" -> null
+      - destination_address_prefixes               = [] -> null
+      - destination_application_security_group_ids = [] -> null
+      - destination_port_range                     = "80" -> null
+      - destination_port_ranges                    = [] -> null
+      - direction                                  = "Inbound" -> null
+      - id                                         = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-http" -> null
+      - name                                       = "allow-http" -> null
+      - network_security_group_name                = "nsg-vm-podman-ecommerce" -> null
+      - priority                                   = 200 -> null
+      - protocol                                   = "Tcp" -> null
+      - resource_group_name                        = "rg-podman-ecommerce" -> null
+      - source_address_prefix                      = "*" -> null
+      - source_address_prefixes                    = [] -> null
+      - source_application_security_group_ids      = [] -> null
+      - source_port_range                          = "*" -> null
+      - source_port_ranges                         = [] -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_network_security_rule.https will be destroyed
+  - resource "azurerm_network_security_rule" "https" {
+      - access                                     = "Allow" -> null
+      - destination_address_prefix                 = "*" -> null
+      - destination_address_prefixes               = [] -> null
+      - destination_application_security_group_ids = [] -> null
+      - destination_port_range                     = "443" -> null
+      - destination_port_ranges                    = [] -> null
+      - direction                                  = "Inbound" -> null
+      - id                                         = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-https" -> null
+      - name                                       = "allow-https" -> null
+      - network_security_group_name                = "nsg-vm-podman-ecommerce" -> null
+      - priority                                   = 300 -> null
+      - protocol                                   = "Tcp" -> null
+      - resource_group_name                        = "rg-podman-ecommerce" -> null
+      - source_address_prefix                      = "*" -> null
+      - source_address_prefixes                    = [] -> null
+      - source_application_security_group_ids      = [] -> null
+      - source_port_range                          = "*" -> null
+      - source_port_ranges                         = [] -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_network_security_rule.ssh will be destroyed
+  - resource "azurerm_network_security_rule" "ssh" {
+      - access                                     = "Allow" -> null
+      - destination_address_prefix                 = "*" -> null
+      - destination_address_prefixes               = [] -> null
+      - destination_application_security_group_ids = [] -> null
+      - destination_port_range                     = "22" -> null
+      - destination_port_ranges                    = [] -> null
+      - direction                                  = "Inbound" -> null
+      - id                                         = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-ssh" -> null
+      - name                                       = "allow-ssh" -> null
+      - network_security_group_name                = "nsg-vm-podman-ecommerce" -> null
+      - priority                                   = 100 -> null
+      - protocol                                   = "Tcp" -> null
+      - resource_group_name                        = "rg-podman-ecommerce" -> null
+      - source_address_prefix                      = "*" -> null
+      - source_address_prefixes                    = [] -> null
+      - source_application_security_group_ids      = [] -> null
+      - source_port_range                          = "*" -> null
+      - source_port_ranges                         = [] -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_public_ip.main will be destroyed
+  - resource "azurerm_public_ip" "main" {
+      - allocation_method       = "Static" -> null
+      - ddos_protection_mode    = "VirtualNetworkInherited" -> null
+      - id                      = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/publicIPAddresses/pip-vm-podman-ecommerce" -> null
+      - idle_timeout_in_minutes = 4 -> null
+      - ip_address              = "20.164.202.187" -> null
+      - ip_tags                 = {} -> null
+      - ip_version              = "IPv4" -> null
+      - location                = "southafricanorth" -> null
+      - name                    = "pip-vm-podman-ecommerce" -> null
+      - resource_group_name     = "rg-podman-ecommerce" -> null
+      - sku                     = "Standard" -> null
+      - sku_tier                = "Regional" -> null
+      - tags                    = {} -> null
+      - zones                   = [] -> null
+        # (5 unchanged attributes hidden)
+    }
+
+  # azurerm_resource_group.main will be destroyed
+  - resource "azurerm_resource_group" "main" {
+      - id         = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce" -> null
+      - location   = "southafricanorth" -> null
+      - name       = "rg-podman-ecommerce" -> null
+      - tags       = {
+          - "environment" = "dev"
+          - "managed-by"  = "terraform"
+          - "project"     = "podman-ecommerce"
+        } -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_subnet.main will be destroyed
+  - resource "azurerm_subnet" "main" {
+      - address_prefixes                              = [
+          - "10.0.1.0/24",
+        ] -> null
+      - default_outbound_access_enabled               = true -> null
+      - id                                            = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce/subnets/subnet-main" -> null
+      - name                                          = "subnet-main" -> null
+      - private_endpoint_network_policies             = "Disabled" -> null
+      - private_link_service_network_policies_enabled = true -> null
+      - resource_group_name                           = "rg-podman-ecommerce" -> null
+      - service_endpoint_policy_ids                   = [] -> null
+      - service_endpoints                             = [] -> null
+      - virtual_network_name                          = "vnet-vm-podman-ecommerce" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_virtual_network.main will be destroyed
+  - resource "azurerm_virtual_network" "main" {
+      - address_space                  = [
+          - "10.0.0.0/16",
+        ] -> null
+      - dns_servers                    = [] -> null
+      - flow_timeout_in_minutes        = 0 -> null
+      - guid                           = "8b16f984-6a07-4bbb-acda-fc6ecf873d6b" -> null
+      - id                             = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce" -> null
+      - location                       = "southafricanorth" -> null
+      - name                           = "vnet-vm-podman-ecommerce" -> null
+      - private_endpoint_vnet_policies = "Disabled" -> null
+      - resource_group_name            = "rg-podman-ecommerce" -> null
+      - subnet                         = [
+          - {
+              - address_prefixes                              = [
+                  - "10.0.1.0/24",
+                ]
+              - default_outbound_access_enabled               = true
+              - delegation                                    = []
+              - id                                            = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce/subnets/subnet-main"
+              - name                                          = "subnet-main"
+              - private_endpoint_network_policies             = "Disabled"
+              - private_link_service_network_policies_enabled = true
+              - service_endpoint_policy_ids                   = []
+              - service_endpoints                             = []
+                # (2 unchanged attributes hidden)
+            },
+        ] -> null
+      - tags                           = {} -> null
+        # (2 unchanged attributes hidden)
+    }
+
+  # tls_private_key.ssh will be destroyed
+  - resource "tls_private_key" "ssh" {
+      - algorithm                     = "RSA" -> null
+      - ecdsa_curve                   = "P224" -> null
+      - id                            = "cde4b29cd9aacf48eabef47a1e061bea0c5a984e" -> null
+      - private_key_openssh           = (sensitive value) -> null
+      - private_key_pem               = (sensitive value) -> null
+      - private_key_pem_pkcs8         = (sensitive value) -> null
+      - public_key_fingerprint_md5    = "66:d3:0d:e9:f6:4a:04:74:88:af:41:f2:09:ea:69:7d" -> null
+      - public_key_fingerprint_sha256 = "SHA256:oad2whWQ3M1Eoh2a9B21q4Hxo1Hcf+BD6MOf9n4HOqE" -> null
+      - public_key_openssh            = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCqXY0pcNQfWfyQ+dvftfZIP2Y63X516PF4fpJaTQxXpjVa2hz+MrkYRHX14wKbOx9c6CFI4852CSUfueL7q9dyj2957JbbElZ7b0Nj3B7o9lCcuASahfMCVzrcIfjw++vWW3cDxcl4sHpq/SiJi5dz/JmP18hJlAsXnXz/SbbJQMla341eZQM7vYz9g+hRu5umzlQXb9sQKM/UHVeZo2s3ZOGErKwm7fFRGvoN3NzE9F/IeNr8V1AwAYyvScY/VJNURzQL9k0fuM6vpbpdHANpXM0zxehQCeLCPDMtS4/j2afgmnY5M80xwBZsMbSL6Fb4vM+jw5r1ZMeB7o7o8BE8P0/YxYbezrMTxBw6iFcOd/lQg2cCASP6neV8Wm5AQ50b1Ltks6/bGm8PKFWaKkavLphgG/+sUgR5alk4ztIn93yWck/EkBWcJO5xW1FvX3asGD5d4Pgtr4kRj/qw0ZkpD1wdgz1eudg2wwZnVL2jWkF/xlvg72eX0rG1vnkmC5kiGJUBt9whmGozY9IUNyDgc6CVGjMquS0HyTxjaR+E9Mz909BKqNjBWvFz+h4E11a1cXxUDXHEn060KjQO2ScmO+h359TiVCaOMX9HRUQzPA0b6mUMKklFlJPe/I1Qaqw5BqC2cjzuzLnJ8P/c4zlbJqP25ILbpiFOgUZYIsulVQ==
+        EOT -> null
+      - public_key_pem                = <<-EOT
+            -----BEGIN PUBLIC KEY-----
+            MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAql2NKXDUH1n8kPnb37X2
+            SD9mOt1+dejxeH6SWk0MV6Y1Wtoc/jK5GER19eMCmzsfXOghSOPOdgklH7ni+6vX
+            co9veeyW2xJWe29DY9we6PZQnLgEmoXzAlc63CH48Pvr1lt3A8XJeLB6av0oiYuX
+            c/yZj9fISZQLF518/0m2yUDJWt+NXmUDO72M/YPoUbubps5UF2/bECjP1B1XmaNr
+            N2ThhKysJu3xURr6DdzcxPRfyHja/FdQMAGMr0nGP1STVEc0C/ZNH7jOr6W6XRwD
+            aVzNM8XoUAniwjwzLUuP49mn4Jp2OTPNMcAWbDG0i+hW+LzPo8Oa9WTHge6O6PAR
+            PD9P2MWG3s6zE8QcOohXDnf5UINnAgEj+p3lfFpuQEOdG9S7ZLOv2xpvDyhVmipG
+            ry6YYBv/rFIEeWpZOM7SJ/d8lnJPxJAVnCTucVtRb192rBg+XeD4La+JEY/6sNGZ
+            KQ9cHYM9XrnYNsMGZ1S9o1pBf8Zb4O9nl9Kxtb55JguZIhiVAbfcIZhqM2PSFDcg
+            4HOglRozKrktB8k8Y2kfhPTM/dPQSqjYwVrxc/oeBNdWtXF8VA1xxJ9OtCo0Dtkn
+            Jjvod+fU4lQmjjF/R0VEMzwNG+plDCpJRZST3vyNUGqsOQagtnI87sy5yfD/3OM5
+            Wyaj9uSC26YhToFGWCLLpVUCAwEAAQ==
+            -----END PUBLIC KEY-----
+        EOT -> null
+      - rsa_bits                      = 4096 -> null
+    }
+
+Plan: 0 to add, 0 to change, 13 to destroy.
+
+Changes to Outputs:
+  - cockpit_url       = "https://20.164.202.187:9090" -> null
+  - public_ip_address = "20.164.202.187" -> null
+  - site_url          = "https://20.164.202.187" -> null
+  - ssh_private_key   = (sensitive value) -> null
+  - vm_id             = "/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce" -> null
+azurerm_network_security_rule.cockpit: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-cockpit]
+azurerm_network_security_rule.http: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-http]
+azurerm_network_security_rule.ssh: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-ssh]
+azurerm_network_interface_security_group_association.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce|/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+azurerm_network_security_rule.https: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce/securityRules/allow-https]
+azurerm_linux_virtual_machine.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Compute/virtualMachines/vm-podman-ecommerce]
+azurerm_network_interface_security_group_association.main: Destruction complete after 6s
+azurerm_network_security_rule.https: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...an-ecommerce/securityRules/allow-https, 00m10s elapsed]
+azurerm_network_security_rule.ssh: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...dman-ecommerce/securityRules/allow-ssh, 00m10s elapsed]
+azurerm_network_security_rule.http: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...man-ecommerce/securityRules/allow-http, 00m10s elapsed]
+azurerm_network_security_rule.cockpit: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...-ecommerce/securityRules/allow-cockpit, 00m10s elapsed]
+azurerm_linux_virtual_machine.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...te/virtualMachines/vm-podman-ecommerce, 00m10s elapsed]
+azurerm_network_security_rule.https: Destruction complete after 13s
+azurerm_network_security_rule.http: Destruction complete after 13s
+azurerm_network_security_rule.cockpit: Destruction complete after 15s
+azurerm_network_security_rule.ssh: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...dman-ecommerce/securityRules/allow-ssh, 00m20s elapsed]
+azurerm_linux_virtual_machine.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...te/virtualMachines/vm-podman-ecommerce, 00m20s elapsed]
+azurerm_network_security_rule.ssh: Destruction complete after 26s
+azurerm_network_security_group.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkSecurityGroups/nsg-vm-podman-ecommerce]
+azurerm_linux_virtual_machine.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...te/virtualMachines/vm-podman-ecommerce, 00m30s elapsed]
+azurerm_network_security_group.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...SecurityGroups/nsg-vm-podman-ecommerce, 00m10s elapsed]
+azurerm_linux_virtual_machine.main: Destruction complete after 37s
+azurerm_network_interface.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/networkInterfaces/nic-vm-podman-ecommerce]
+tls_private_key.ssh: Destroying... [id=cde4b29cd9aacf48eabef47a1e061bea0c5a984e]
+tls_private_key.ssh: Destruction complete after 0s
+azurerm_network_security_group.main: Destruction complete after 13s
+azurerm_network_interface.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...workInterfaces/nic-vm-podman-ecommerce, 00m10s elapsed]
+azurerm_network_interface.main: Destruction complete after 14s
+azurerm_public_ip.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/publicIPAddresses/pip-vm-podman-ecommerce]
+azurerm_subnet.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce/subnets/subnet-main]
+azurerm_public_ip.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...licIPAddresses/pip-vm-podman-ecommerce, 00m10s elapsed]
+azurerm_subnet.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...m-podman-ecommerce/subnets/subnet-main, 00m10s elapsed]
+azurerm_public_ip.main: Destruction complete after 11s
+azurerm_subnet.main: Destruction complete after 11s
+azurerm_virtual_network.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce/providers/Microsoft.Network/virtualNetworks/vnet-vm-podman-ecommerce]
+azurerm_virtual_network.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...rtualNetworks/vnet-vm-podman-ecommerce, 00m10s elapsed]
+azurerm_virtual_network.main: Destruction complete after 12s
+azurerm_resource_group.main: Destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-02a19fa7aae6/resourceGroups/rg-podman-ecommerce]
+azurerm_resource_group.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...ae6/resourceGroups/rg-podman-ecommerce, 00m10s elapsed]
+azurerm_resource_group.main: Still destroying... [id=/subscriptions/8159fd40-ca9d-4561-a912-...ae6/resourceGroups/rg-podman-ecommerce, 00m20s elapsed]
+azurerm_resource_group.main: Destruction complete after 22s
+
+Destroy complete! Resources: 13 destroyed.
