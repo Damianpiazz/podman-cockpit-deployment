@@ -31,6 +31,7 @@ services:
     container_name: nextjs-ecommerce
     network_mode: host
     environment:
+      - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_BASE_URL=http://localhost
       - SHOPIFY_STORE_DOMAIN=${SHOPIFY_STORE_DOMAIN:-}
       - SHOPIFY_STOREFRONT_ACCESS_TOKEN=${SHOPIFY_STOREFRONT_ACCESS_TOKEN:-}
