@@ -1,26 +1,54 @@
-# Stage 1: Build Next.js standalone
-FROM docker.io/library/node:20-alpine AS builder
-RUN corepack enable && corepack prepare yarn@4.12.0 --activate
-WORKDIR /app
-COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn .yarn
-RUN yarn install --immutable
-COPY . .
-ARG NEXT_PUBLIC_BASE_URL=http://localhost
-ARG NEXT_PUBLIC_DEFAULT_REGION=us
-ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
-ENV NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION
-RUN yarn build
+# ---------------------------------------------------------------
+# Vercel Commerce – multi-stage Docker build
+# ---------------------------------------------------------------
+FROM docker.io/library/node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Stage 2: Run standalone server
-FROM docker.io/library/node:20-alpine AS runner
+# ---- Dependencies ----
+FROM base AS deps
 WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# ---- Build ----
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ARG NEXT_PUBLIC_BASE_URL=http://localhost
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+
+ARG SHOPIFY_STORE_DOMAIN="placeholder.myshopify.com"
+ARG SHOPIFY_STOREFRONT_ACCESS_TOKEN=""
+ARG SHOPIFY_REVALIDATION_SECRET=""
+ARG COMPANY_NAME="Vercel Inc."
+ARG SITE_NAME="Next.js Commerce"
+
+ENV SHOPIFY_STORE_DOMAIN=$SHOPIFY_STORE_DOMAIN
+ENV SHOPIFY_STOREFRONT_ACCESS_TOKEN=$SHOPIFY_STOREFRONT_ACCESS_TOKEN
+ENV SHOPIFY_REVALIDATION_SECRET=$SHOPIFY_REVALIDATION_SECRET
+ENV COMPANY_NAME=$COMPANY_NAME
+ENV SITE_NAME=$SITE_NAME
+
+RUN pnpm build
+
+# ---- Production ----
+FROM base AS runner
+WORKDIR /app
+
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser  --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+
 USER nextjs
+
 EXPOSE 3000
 ENV PORT=3000
+
 CMD ["node", "server.js"]
