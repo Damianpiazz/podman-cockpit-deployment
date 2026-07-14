@@ -34,12 +34,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "db_password" {
-  description = "Password de PostgreSQL para Medusa"
-  type        = string
-  sensitive   = true
-}
-
 variable "repo_url" {
   description = "URL del repositorio Git a clonar en la VM"
   type        = string
